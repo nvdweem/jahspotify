@@ -1145,7 +1145,7 @@ void populateJArtistInstanceFromArtistBrowse(JNIEnv *env, sp_artistbrowse *artis
     int count = 0;
     for (count = 0; count < numSimilarArtists; count++)
     {
-      sp_artist *similarArtist = sp_artistbrowse_similar_artist(artistBrowse,0);
+      sp_artist *similarArtist = sp_artistbrowse_similar_artist(artistBrowse,count);
       if (similarArtist)
       {
         sp_artist_add_ref(similarArtist);
