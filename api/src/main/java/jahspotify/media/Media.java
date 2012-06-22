@@ -25,11 +25,6 @@ public class Media
     protected List<String> redirects;
 
     /**
-     * Popularity of this media (from 0 to 100).
-     */
-    protected Integer popularity;
-
-    /**
      * Restrictions of this media.
      */
     private List<Restriction> restrictions;
@@ -46,7 +41,6 @@ public class Media
     {
         this.id = null;
         this.redirects = new ArrayList<String>();
-        this.popularity = -1;
         this.restrictions = new ArrayList<Restriction>();
         this.externalIds = new HashMap<String, String>();
     }
@@ -98,26 +92,6 @@ public class Media
     public void addRedirect(String redirect)
     {
         this.redirects.add(redirect);
-    }
-
-    /**
-     * Get the media popularity.
-     *
-     * @return A value between 0 and 100
-     */
-    public Integer getPopularity()
-    {
-        return this.popularity;
-    }
-
-    /**
-     * Set the media popularity.
-     *
-     * @param popularity A value between 0 and 100.
-     */
-    public void setPopularity(Integer popularity)
-    {
-        this.popularity = popularity;
     }
 
     /**

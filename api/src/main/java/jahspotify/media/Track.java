@@ -45,6 +45,11 @@ public class Track extends Media
      * If this track is explicit.
      */
     private boolean explicit;
+    
+    /**
+     * The popularity of the track.
+     */
+    private int popularity;
 
     /**
      * Creates an empty {@link Track} object.
@@ -219,7 +224,22 @@ public class Track extends Media
         this.explicit = explicit;
     }
 
-    @Override
+    /**
+     * Returns the popularity of this track.
+     */
+    public int getPopularity() {
+		return popularity;
+	}
+
+    /**
+     * Sets the popularity of this track.
+     * @param popularity The popularity as a number between 0 and 100.
+     */
+	public void setPopularity(int popularity) {
+		this.popularity = popularity;
+	}
+
+	@Override
     public boolean equals(final Object o)
     {
         if (this == o)
