@@ -2,17 +2,18 @@
 Jah'Spotify Library
 ===============================================================================
 
-# Note
+## Note
 This project aims more to be a library for other Spotify tools then to be a tool on itself. Use the johanlindquist/jahspotify repository for the Spotify tool.
-Although this repository still has the web maven part, it isn't maintained and will probably not work.
 
 The aim of this project will be to deliver a native project with as few dependencies as possible. For now the following dependencies which could be stripped are required:
-- GSON
-- HTTP components
-- Spring
-- jen-api
-- MongoDB
-- OpenAL (for native part)
+* <del>GSON</del>
+* <del>HTTP components</del>
+* <del>Spring</del>
+* <del>jen-api</del>
+* <del>MongoDB</del>
+* OpenAL (for native part)
+
+Removing the Spring dependency makes the coupling between the components a bit tighter, but it makes the library more lightweight.
 
 ## Introduction
 
@@ -68,10 +69,6 @@ You can find the OpenAL SDK at:
 
     http://connect.creativelabs.com/developer/Wiki/OpenAL%20SDK%20for%20Windows.aspx
 
-## Running
-
-Download and install MongoDB
-
 ### Running on Windows
 
 For windows, you will need to download a few more dependencies:
@@ -91,34 +88,8 @@ For windows, you will need to download a few more dependencies:
 
 * services
 
-  provides all Jah'Spotify Spring services
-
-* web
-
-  provides the RESTful API (json based)
-
-* executable-war
-
-  provides a single, executable Jah'Spotify war file
-
-* web-client
-
-  provides java client for interacting with the RESTful API
-
-* web-common
-
-  provides the java beans which are serialized over the RESTful API
-
-* storage
-
-  provides basic storage implementations for caching media objects (tracks/images/etc)
+  provides components which make the Api more easy to use
 
 ## Licensing
 
 All Jah'Spotify code is released under the Apache 2.0 license
-
-## Contributors
-
-Niels vd Weem
-
-Thanks!

@@ -1,7 +1,5 @@
 package jahspotify.query;
 
-import jahspotify.Query;
-
 /**
  * @author Johan Lindquist
  */

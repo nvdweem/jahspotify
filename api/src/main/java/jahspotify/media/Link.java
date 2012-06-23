@@ -1,10 +1,13 @@
 package jahspotify.media;
 
-import java.io.UnsupportedEncodingException;
-import java.net.*;
-import java.util.regex.*;
+import jahspotify.util.BaseConvert;
+import jahspotify.util.Hex;
 
-import jahspotify.util.*;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Represents a link (Spotify or Jah'Spotify URI) to a media object.
@@ -53,7 +56,8 @@ public class Link
          *
          * @return The lower-case name of this enum constant.
          */
-        public String toString()
+        @Override
+		public String toString()
         {
             return this.name().toLowerCase();
         }
@@ -127,14 +131,14 @@ public class Link
      * <pre>jahspotify:folder:([^\\s]+)</pre>
      */
     private static final Pattern jahFolderPattern = Pattern.compile("jahspotify:folder:(ROOT|([0-9A-Za-z]{16}))");
-    
+
     /**
      * A regular expression to match local URIs:
      * <p/>
      * <pre>jahspotify:folder:([^\\s]+)</pre>
      */
     private static final Pattern localPattern = Pattern.compile("spotify:local:(.*)");
-    
+
     /**
      * A regular expression to match local URIs:
      * <p/>
@@ -538,7 +542,8 @@ public class Link
      * @return A Spotify URI string (or {@code null} if an
      *         {@link UnsupportedEncodingException} occurs).
      */
-    public String toString()
+    @Override
+	public String toString()
     {
         return this.asString();
     }
@@ -553,25 +558,6 @@ public class Link
     public static Link create(String uri) throws InvalidSpotifyURIException
     {
         return new Link(uri);
-    }
-
-    /**
-     * Convert a base-62 encoded id into a hexadecimal id.
-     *
-     * @param base62 A base-62 encoded id.
-     * @return A hexadecimal id.
-     */
-    private static String toHex(String base62)
-    {
-        StringBuffer hex = new StringBuffer(BaseConvert.convert(base62, 62, 16));
-
-        /* Prepend zeroes until hexadecimal string length is 32. */
-        while (hex.length() < 32)
-        {
-            hex.insert(0, '0');
-        }
-
-        return hex.toString();
     }
 
     /**

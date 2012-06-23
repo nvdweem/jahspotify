@@ -12,116 +12,33 @@
     <inceptionYear>2011</inceptionYear>
 
     <modules>
-        <module>web</module>
         <module>native</module>
         <module>api</module>
-        <module>storage</module>
         <module>services</module>
-        <module>web-client</module>
-        <module>web-common</module>
-        <module>executable-war</module>
-        <module>android</module>
     </modules>
-
-    <properties>
-        <spring.version>3.1.1.RELEASE</spring.version>
-        <jetty.version>6.1.25</jetty.version>
-    </properties>
 
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>jahspotify</groupId>
-                <artifactId>jahspotify-web-common</artifactId>
-                <version>0.0.1-SNAPSHOT</version>
-            </dependency>
-
-            <dependency>
-                <groupId>jahspotify</groupId>
                 <artifactId>jahspotify-api</artifactId>
                 <version>0.0.1-SNAPSHOT</version>
             </dependency>
-
             <dependency>
                 <groupId>jahspotify</groupId>
                 <artifactId>jahspotify-services</artifactId>
                 <version>0.0.1-SNAPSHOT</version>
             </dependency>
-
-            <dependency>
-                <groupId>jahspotify</groupId>
-                <artifactId>jahspotify-storage</artifactId>
-                <version>0.0.1-SNAPSHOT</version>
-            </dependency>
-            <dependency>
-                <groupId>jahspotify</groupId>
-                <artifactId>jahspotify-client</artifactId>
-                <version>0.0.1-SNAPSHOT</version>
-            </dependency>
-
             <dependency>
                 <groupId>jahspotify</groupId>
                 <artifactId>libjahspotify</artifactId>
                 <version>0.0.1-SNAPSHOT</version>
                 <type>so</type>
             </dependency>
-
-            <dependency>
-                <groupId>com.google.code.gson</groupId>
-                <artifactId>gson</artifactId>
-                <version>1.7.1</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-web</artifactId>
-                <version>${spring.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-webmvc</artifactId>
-                <version>${spring.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-context</artifactId>
-                <version>${spring.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-context-support</artifactId>
-                <version>${spring.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-beans</artifactId>
-                <version>${spring.version}</version>
-            </dependency>
-
             <dependency>
                 <groupId>commons-logging</groupId>
                 <artifactId>commons-logging</artifactId>
                 <version>1.0.4</version>
-            </dependency>
-
-            <dependency>
-                <groupId>javax.servlet</groupId>
-                <artifactId>servlet-api</artifactId>
-                <version>2.3</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpclient</artifactId>
-                <version>4.1</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpcore</artifactId>
-                <version>4.1</version>
             </dependency>
 
             <dependency>
@@ -130,8 +47,6 @@
                 <version>3.8.1</version>
                 <scope>test</scope>
             </dependency>
-
-
         </dependencies>
     </dependencyManagement>
 

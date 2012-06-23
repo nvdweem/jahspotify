@@ -18,7 +18,6 @@ import jahspotify.media.Playlist;
 import jahspotify.media.Track;
 import jahspotify.media.User;
 
-import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -508,9 +507,7 @@ public class JahSpotifyImpl implements JahSpotify
     {
         ensureLoggedIn();
 
-        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         _libSpotifyLock.lock();
-        int len = -1;
         Image image = new Image(uri);
         try
         {
@@ -520,26 +517,7 @@ public class JahSpotifyImpl implements JahSpotify
         {
             _libSpotifyLock.unlock();
         }
-/*
-        if (len > 0)
-        {
-            final byte[] bytes = outputStream.toByteArray();
-            if (len != bytes.length)
-            {
-                throw new IllegalStateException("Number bytes reported written does not match length of bytes (" + len + " != " + bytes.length + ")");
-            }
 
-            synchronized (_lockedImages)
-            {
-                _lockedImages.remove(uri);
-            }
-            return new Image(uri, bytes);
-        }
-        else
-        {
-            _lockedImages.add(uri);
-        }
-        */
         return image;
     }
 

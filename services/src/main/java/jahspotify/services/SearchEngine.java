@@ -1,25 +1,33 @@
 package jahspotify.services;
 
-import java.util.concurrent.*;
-import javax.annotation.PostConstruct;
+import jahspotify.JahSpotify;
+import jahspotify.Search;
+import jahspotify.SearchListener;
+import jahspotify.SearchResult;
 
-import jahspotify.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Johan Lindquist
  */
-@Service
 public class SearchEngine
 {
-    @Autowired
-    private JahSpotifyService _jahSpotifyService;
+    private JahSpotifyService _jahSpotifyService = JahSpotifyService.getInstance();
 
     private JahSpotify _jahSpotify;
 
-    @PostConstruct
-    public void initialize()
+    private static SearchEngine instance;
+    public static SearchEngine getInstance() {
+    	if (instance == null) {
+    		instance = new SearchEngine();
+    		instance.initialize();
+    	}
+    	return instance;
+    }
+
+    private void initialize()
     {
         _jahSpotify = _jahSpotifyService.getJahSpotify();
     }

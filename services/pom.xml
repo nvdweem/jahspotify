@@ -36,25 +36,9 @@
     </parent>
 
     <dependencies>
-
         <dependency>
             <groupId>jahspotify</groupId>
-            <artifactId>jahspotify-storage</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-context</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-context-support</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-beans</artifactId>
+            <artifactId>jahspotify-api</artifactId>
         </dependency>
 
         <dependency>
@@ -63,22 +47,9 @@
         </dependency>
 
         <dependency>
-            <groupId>jahspotify</groupId>
-            <artifactId>jahspotify-api</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.8.1</version>
         </dependency>
-
-        <dependency>
-            <groupId>com.googlecode.jen-api</groupId>
-            <artifactId>jen-api</artifactId>
-            <version>4.x.p</version>
-        </dependency>
-
     </dependencies>
 
 </project>

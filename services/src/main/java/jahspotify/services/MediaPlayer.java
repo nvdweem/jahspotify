@@ -1,19 +1,25 @@
 package jahspotify.services;
 
-import java.util.*;
-import java.util.concurrent.*;
-import javax.annotation.*;
-
-import jahspotify.*;
+import jahspotify.JahSpotify;
+import jahspotify.PlaybackListener;
 import jahspotify.media.Link;
-import org.apache.commons.logging.*;
-import org.springframework.beans.factory.annotation.*;
-import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * @author Johan Lindquist
  */
-@Service
 public class MediaPlayer
 {
     private MediaPlayerState _mediaPlayerState = MediaPlayerState.STOPPED;
@@ -26,19 +32,24 @@ public class MediaPlayer
     public static final int QUIT = 1;
     public static final int STOP_PLAY = 2;
 
-    @Autowired
-    private QueueManager _queueManager;
+    private QueueManager _queueManager = QueueManager.getInstance();
 
     // Defines whether or not play should start immediately when a track is added to an empty queue
-    @Value(value = "${jahspotify.player.auto-play-on-track-added}")
     private boolean _autoPlay = true;
 
-    @Autowired
-    private JahSpotifyService _jahSpotifyService;
-
+    private JahSpotifyService _jahSpotifyService = JahSpotifyService.getInstance();
     private JahSpotify _jahSpotify;
 
-    @PreDestroy
+    private static MediaPlayer instance;
+    public static MediaPlayer getInstance() {
+    	if (instance == null) {
+    		instance = new MediaPlayer();
+    		instance.initialize();
+    		instance._autoPlay = Boolean.valueOf(System.getProperty("jahspotify.player.auto-play-on-track-added"));
+    	}
+    	return instance;
+    }
+
     public void shutdown()
     {
         try
@@ -56,8 +67,7 @@ public class MediaPlayer
         }
     }
 
-    @PostConstruct
-    public void initialize()
+    private void initialize()
     {
         _queueManager.addQueueListener(new AbstractQueueListener()
         {
@@ -228,7 +238,6 @@ public class MediaPlayer
         });
         t.setDaemon(true);
         t.start();
-
     }
 
 

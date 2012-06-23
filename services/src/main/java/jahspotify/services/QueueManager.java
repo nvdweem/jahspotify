@@ -19,18 +19,25 @@ package jahspotify.services;
  *        under the License.
  */
 
-import java.net.*;
-import java.util.*;
-import java.util.concurrent.locks.*;
+import jahspotify.JahSpotify;
+import jahspotify.media.Album;
+import jahspotify.media.Link;
+import jahspotify.media.Playlist;
+import jahspotify.media.Track;
 
-import javax.annotation.PostConstruct;
+import java.net.MalformedURLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
-import jahspotify.*;
-import jahspotify.media.*;
-import org.apache.commons.logging.*;
-import org.springframework.beans.factory.annotation.*;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.stereotype.Service;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Manages all the queues within Jah'Spotify.  It allows for multiple queues to be maintained - only one is considered
@@ -38,8 +45,6 @@ import org.springframework.stereotype.Service;
  *
  * @author Johan Lindquist
  */
-@Service
-@Lazy(false)
 public class QueueManager
 {
     private Log _log = LogFactory.getLog(QueueManager.class);
@@ -52,15 +57,21 @@ public class QueueManager
 
     private jahspotify.services.Queue _currentQueue;
 
-    @Autowired
-    private MediaPlayer _mediaPlayer;
+    private MediaPlayer _mediaPlayer = MediaPlayer.getInstance();
 
-    @Autowired
-    private JahSpotifyService _jahSpotifyService;
+    private JahSpotifyService _jahSpotifyService = JahSpotifyService.getInstance();
     private JahSpotify _jahSpotify;
 
-    @PostConstruct
-    public void initialize()
+    private static QueueManager instance;
+    public static QueueManager getInstance() {
+    	if (instance == null) {
+    		instance = new QueueManager();
+    		instance.initialize();
+    	}
+    	return instance;
+    }
+
+    private void initialize()
     {
         _jahSpotify = _jahSpotifyService.getJahSpotify();
 
@@ -87,7 +98,7 @@ public class QueueManager
                 {
                     final Link trackEnded = queueTrack.getTrackUri();
 
-                    _currentQueue.getQueueStatistics().incrementTotalPlayTime(((System.currentTimeMillis() - _currentQueue.getQueueStatistics().getCurrentTrackStart()) / 1000));
+                    _currentQueue.getQueueStatistics().incrementTotalPlayTime((System.currentTimeMillis() - _currentQueue.getQueueStatistics().getCurrentTrackStart()) / 1000);
                     if (forcedEnd)
                     {
                         _currentQueue.getQueueStatistics().incrementTracksSkipped();
@@ -137,7 +148,8 @@ public class QueueManager
                 }
             }
 
-            public QueueNextTrack nextTrackToQueue()
+            @Override
+			public QueueNextTrack nextTrackToQueue()
             {
                 if (_currentQueue.getQueueConfiguration().isRepeatCurrentTrack())
                 {

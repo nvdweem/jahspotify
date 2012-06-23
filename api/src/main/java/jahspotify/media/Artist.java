@@ -1,6 +1,7 @@
 package jahspotify.media;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
@@ -39,11 +40,6 @@ public class Artist extends Media
      * A {@link List} of albums.
      */
     private List<Link> albums;
-
-     /**
-     * A {@link List} of tracks.
-     */
-    private List<Link> tracks;
 
     /**
      * A {@link List} of similar artists.
@@ -244,7 +240,8 @@ public class Artist extends Media
      * @param o Another object to compare.
      * @return true of the objects are equal, false otherwise.
      */
-    public boolean equals(Object o)
+    @Override
+	public boolean equals(Object o)
     {
         if (o instanceof Artist)
         {
@@ -273,12 +270,14 @@ public class Artist extends Media
      *
      * @return The {@link Artist} objects hash code.
      */
-    public int hashCode()
+    @Override
+	public int hashCode()
     {
-        return (this.id != null) ? this.id.hashCode() : 0;
+        return this.id != null ? this.id.hashCode() : 0;
     }
 
-    public String toString()
+    @Override
+	public String toString()
     {
         return String.format("[Artist: %s]", this.name);
     }

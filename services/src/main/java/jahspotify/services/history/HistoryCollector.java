@@ -19,47 +19,35 @@ package jahspotify.services.history;
  *        under the License.
  */
 
-import javax.annotation.PostConstruct;
-
-import jahspotify.services.*;
-import jahspotify.storage.statistics.*;
-import org.springframework.beans.factory.annotation.*;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.stereotype.Service;
+import jahspotify.services.AbstractMediaPlayerListener;
+import jahspotify.services.MediaPlayer;
+import jahspotify.services.QueueTrack;
 
 /**
  * @author Johan Lindquist
  */
-@Service
-@Lazy(value = false)
 public class HistoryCollector
 {
-    @Autowired
-    private MediaPlayer _mediaPlayer;
-
-    @Autowired
-    @Qualifier(value = "mongodb")
-    private HistoricalStorage _historicalStorage;
+    private MediaPlayer _mediaPlayer = MediaPlayer.getInstance();
 
     private long _trackStartTime;
     private long _trackTimePointer;
     private long _trackPlayTime;
 
-    @PostConstruct
-    private void initialize()
+    public void initialize()
     {
         _mediaPlayer.addMediaPlayerListener(new AbstractMediaPlayerListener()
         {
             @Override
             public void paused(final QueueTrack currentTrack)
             {
-                _trackPlayTime = _trackPlayTime + ((System.currentTimeMillis() - _trackTimePointer) / 1000);
+                _trackPlayTime = _trackPlayTime + (System.currentTimeMillis() - _trackTimePointer) / 1000;
             }
 
             @Override
             public void stopped(final QueueTrack currentTrack)
             {
-                _trackPlayTime = _trackPlayTime + ((System.currentTimeMillis() - _trackTimePointer) / 1000);
+                _trackPlayTime = _trackPlayTime + (System.currentTimeMillis() - _trackTimePointer) / 1000;
             }
 
             @Override
@@ -79,8 +67,7 @@ public class HistoryCollector
             @Override
             public void trackEnd(final QueueTrack queueTrack, final boolean forcedEnd)
             {
-                _trackPlayTime = _trackPlayTime + ((System.currentTimeMillis() - _trackTimePointer) / 1000);
-                _historicalStorage.addHistory(new TrackHistory(queueTrack.getQueue(), queueTrack.getTrackUri(), queueTrack.getSource(), queueTrack.getId(), !forcedEnd, (int) _trackPlayTime, _trackStartTime));
+                _trackPlayTime = _trackPlayTime + (System.currentTimeMillis() - _trackTimePointer) / 1000;
                 _trackPlayTime = 0;
                 _trackTimePointer = 0;
             }

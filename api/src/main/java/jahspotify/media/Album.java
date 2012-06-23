@@ -1,8 +1,7 @@
 package jahspotify.media;
 
-import java.util.*;
-
-import jahspotify.util.Hex;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Holds information about an album.
@@ -258,7 +257,8 @@ public class Album extends Media
      * @param o Another object to compare.
      * @return true of the objects are equal, false otherwise.
      */
-    public boolean equals(Object o)
+    @Override
+	public boolean equals(Object o)
     {
         if (o instanceof Album)
         {
@@ -306,12 +306,14 @@ public class Album extends Media
      *
      * @return The {@link Album} objects hash code.
      */
-    public int hashCode()
+    @Override
+	public int hashCode()
     {
-        return (this.id != null) ? this.id.hashCode() : 0;
+        return this.id != null ? this.id.hashCode() : 0;
     }
 
-    public String toString()
+    @Override
+	public String toString()
     {
         return String.format("[Album: %s, %s]", this.artist, this.name);
     }

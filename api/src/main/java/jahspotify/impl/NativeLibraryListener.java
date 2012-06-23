@@ -1,7 +1,5 @@
 package jahspotify.impl;
 
-import jahspotify.media.*;
-
 /**
  * @author Johan Lindquist
  */
