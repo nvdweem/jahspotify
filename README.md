@@ -1,6 +1,18 @@
 ===============================================================================
-Jah'Spotify Project
+Jah'Spotify Library
 ===============================================================================
+
+# Note
+This project aims more to be a library for other Spotify tools then to be a tool on itself. Use the johanlindquist/jahspotify repository for the Spotify tool.
+Although this repository still has the web maven part, it isn't maintained and will probably not work.
+
+The aim of this project will be to deliver a native project with as few dependencies as possible. For now the following dependencies which could be stripped are required:
+- GSON
+- HTTP components
+- Spring
+- jen-api
+- MongoDB
+- OpenAL (for native part)
 
 ## Introduction
 
@@ -21,16 +33,13 @@ Currently supports:
 * basic historical track list view
 * very basic android app for remote control
 
-In addition, all the above functions are accessible over a JSON based RESTful API (provided by the services and web
-modules).
-
 ## To build
 
 Jah'Spotify supports the Linux and Windows versions of libspotify (see below for more details on building on Windows).
 
 To build the sources first check them out from git
 
-    git clone git://github.com/johanlindquist/jahspotify.git
+    git clone git://github.com/nvdweem/jahspotify.git
     cd jahspotify
 
 Next, you need to download and install libspotify & request an API key from Spotify.  This can be done
@@ -72,10 +81,6 @@ For windows, you will need to download a few more dependencies:
 
 ## Modules
 
-* android
-
-  provides a simple app for browsing playlists and queueing tracks
-
 * api
 
   provides the basic operations for interacting with Jah'Spotify (and in turn libspotify)
@@ -107,111 +112,6 @@ For windows, you will need to download a few more dependencies:
 * storage
 
   provides basic storage implementations for caching media objects (tracks/images/etc)
-
-## UI
-
-TBD
-
-## REST API
-
-To run up the Jah'Spotify RESTful API
-
-    mvn jetty:run -Djahspotify.spotify.username=<your username> -Djahspotify.spotify.password=<your password>
-
-NOTE: The username and password can also be specified in your Maven settings.xml
-
-[http://localhost:8080/jahspotify/system/status](http://localhost:8080/jahspotify/system/status)
-
-All media can be retrieved using the Media Controller URL
-
-    http://localhost:8080/jahspotify/media/<URI>
-
-Where the URI is any of the URIs specified below, in the more specialized controllers:
-
-### URLs
-
-__Library retrieval__
-
-[http://localhost:8080/jahspotify/library/](http://localhost:8080/jahspotify/library/)
-
-__Folder retrieval__
-
-[http://localhost:8080/jahspotify/folder/jahspotify:folder:9594c66fa67e43ca](http://localhost:8080/jahspotify/folder/jahspotify:folder:9594c66fa67e43ca)
-
-__Playlist retrieval__
-
-[http://localhost:8080/jahspotify/playlist/spotify:user:dummy-user:playlist:0s8KIfDTmZz5zupnkqF6FO](http://localhost:8080/jahspotify/playlist/spotify:user:dummy-user:playlist:0s8KIfDTmZz5zupnkqF6FO)
-
-__Album retrieval__
-
-[http://localhost:8080/jahspotify/album/spotify:album:3PogVmhNucYNfyywZvTd7F](http://localhost:8080/jahspotify/album/spotify:album:3PogVmhNucYNfyywZvTd7F)
-
-__Artist retrieval__
-
-[http://localhost:8080/jahspotify/artist/spotify:artist:7dGJo4pcD2V6oG8kP0tJRR](http://localhost:8080/jahspotify/artist/spotify:artist:7dGJo4pcD2V6oG8kP0tJRR)
-
-__Track retrieval__
-
-[http://localhost:8080/jahspotify/track/spotify:track:7mliwEVqxIuwLmHdTXlBrx](http://localhost:8080/jahspotify/track/spotify:track:7mliwEVqxIuwLmHdTXlBrx)
-
-__Image retrieval__
-
-[http://localhost:8080/jahspotify/image/spotify:image:e99e74261d120029fecfde36ab1c07a0eb99e54d](http://localhost:8080/jahspotify/image/spotify:image:e99e74261d120029fecfde36ab1c07a0eb99e54d)
-
-__Adding a track to the play queue__
-
-[http://localhost:8080/jahspotify/queue/jahspotify:queue:default/add/spotify:track:2eEUnqeLUjxkefHrIgqgAd](http://localhost:8080/jahspotify/queue/jahspotify:queue:default/add/spotify:track:2eEUnqeLUjxkefHrIgqgAd)
-
-__Retrieving play queue__
-
-[http://localhost:8080/jahspotify/queue/jahspotify:queue:default](http://localhost:8080/jahspotify/queue/jahspotify:queue:default)
-
-__Searching__
-
-[http://localhost:8080/jahspotify/search/?query=alika&numTracks=1](http://localhost:8080/jahspotify/search/?query=alika&numTracks=1)
-
-#### While playing:
-
-__Skip to next track in queue__
-
-[http://localhost:8080/jahspotify/player/skip](http://localhost:8080/jahspotify/player/skip)
-
-__Pause playback__
-
-[http://localhost:8080/jahspotify/player/pause](http://localhost:8080/jahspotify/player/pause)
-
-__Resume play__
-
-[http://localhost:8080/jahspotify/player/resume](http://localhost:8080/jahspotify/player/resume)
-
-__Stop play__
-
-[http://localhost:8080/jahspotify/player/stop](http://localhost:8080/jahspotify/player/stop)
-
-__Play__
-
-[http://localhost:8080/jahspotify/player/play](http://localhost:8080/jahspotify/player/play)
-
-__Seek__
-
-[http://localhost:8080/jahspotify/player/seek?offset=43](http://localhost:8080/jahspotify/player/seek?offset=43)
-
-__Volume Up__
-
-[http://localhost:8080/jahspotify/player/volume-up](http://localhost:8080/jahspotify/player/volume-up)
-
-__Volume Down__
-
-[http://localhost:8080/jahspotify/player/volume-down](http://localhost:8080/jahspotify/player/volume-down)
-
-There are other URLs - please examine the web module for them.
-
-NOTE: You may have to setup your LD_LIBRARY_PATH to point to the libspotify & libjahspotify locations!
-
-## Discussions and other:
-
-For now, there is nothing concrete setup but try the issues page on github, contacting us on github.  Also found at times
-on freenode - #jahspotify.
 
 ## Licensing
 
