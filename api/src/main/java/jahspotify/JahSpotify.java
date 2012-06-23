@@ -24,6 +24,7 @@ public interface JahSpotify
      * @return The read artist or null if it could not be read
      */
     public Artist readArtist(Link link);
+    public Artist readArtist(Link link, boolean browse);
 
     /** Read the information for the specified track.
      *
@@ -37,6 +38,7 @@ public interface JahSpotify
      * @param link The link for the album in question
      * @return The read album or null if it could not be read
      */
+    public Album readAlbum(Link link, boolean browse);
     public Album readAlbum(Link link);
 
     /** Read the specified image.

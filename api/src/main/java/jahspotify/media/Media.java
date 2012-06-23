@@ -1,13 +1,17 @@
 package jahspotify.media;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Holds basic information about media.
  *
  * @author Felix Bruns <felixbruns@web.de>
  */
-public class Media
+public class Media implements Loadable
 {
     /**
      * Identifier for this media object (32-character hex string).
@@ -33,6 +37,11 @@ public class Media
      * External ids of this media.
      */
     private Map<String, String> externalIds;
+
+    /**
+     * Shows if the browse function has completed yet.
+     */
+    private boolean loaded = false;
 
     /**
      * Creates an empty {@link Media} object.
@@ -172,4 +181,22 @@ public class Media
     {
         this.externalIds = externalIds;
     }
+
+    /**
+     * Returns if the media is complete.
+     * @return true if the media is complete.
+     */
+	@Override
+	public boolean isLoaded() {
+		return loaded;
+	}
+
+	/**
+	 * Marks the media as complete.
+	 * @param browsed true if the media is complete.
+	 */
+	@Override
+	public void setLoaded(boolean loaded) {
+		this.loaded = loaded;
+	}
 }

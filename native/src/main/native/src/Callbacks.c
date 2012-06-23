@@ -614,14 +614,13 @@ exit:
     
 }
 
-int signalArtistBrowseLoaded(sp_artistbrowse *artistBrowse, int32_t token)
+int signalArtistBrowseLoaded(sp_artistbrowse *artistBrowse, jobject artistInstance)
 {
     JNIEnv* env = NULL;
     jclass aClass;
     jmethodID aMethod;
     
     sp_link *artistLink = NULL;
-    jobject artistInstance = NULL;
     jclass jClass;
     
     log_debug("jahspotify","signalArtistBrowseLoaded","Artist browse loaded");
@@ -637,8 +636,6 @@ int signalArtistBrowseLoaded(sp_artistbrowse *artistBrowse, int32_t token)
       log_error("jahspotify","createJArtistInstance","Could not load jahnotify.media.Artist");
       goto fail;
     }
-    
-    artistInstance = createInstanceFromJClass(env, jClass);
     
     if (!g_mediaLoadedListener)
     {
@@ -680,8 +677,10 @@ int signalArtistBrowseLoaded(sp_artistbrowse *artistBrowse, int32_t token)
     // Convert the instance to an artist
     // Pass it up in the callback
     populateJArtistInstanceFromArtistBrowse(env,artistBrowse,artistInstance);
-    
-    (*env)->CallVoidMethod(env, g_mediaLoadedListener, aMethod, token, artistInstance);
+ 
+	setObjectBooleanField(env,artistInstance,"loaded",JNI_TRUE);
+	(*env)->CallVoidMethod(env, g_mediaLoadedListener, aMethod, 0, artistInstance);
+	(*env)->DeleteGlobalRef(env, artistInstance);
     if (checkException(env) != 0)
     {
       log_error("callbacks","signalArtistBrowseLoaded","Exception while calling callback");
@@ -701,7 +700,7 @@ exit:
     }
 }
 
-int signalImageLoaded(sp_image *image, int32_t token)
+int signalImageLoaded(sp_image *image, jobject imageInstance)
 {
   
   if (!g_mediaLoadedListener)
@@ -713,13 +712,13 @@ int signalImageLoaded(sp_image *image, int32_t token)
   JNIEnv* env = NULL;
   jmethodID method;
   
-  log_debug("callbacks","signalImageLoaded","Image loaded: token: %d\n",token);
+  log_debug("callbacks","signalImageLoaded","Image loaded: token: %d\n",0);
   
   if (!retrieveEnv((JNIEnv*)&env))
   {
       goto fail;
   }
-    
+
   method = (*env)->GetMethodID(env, g_mediaLoadedListenerClass, "image", "(ILjahspotify/media/Link;Ljahspotify/media/ImageSize;[B)V");
   
   if (method == NULL)
@@ -729,14 +728,24 @@ int signalImageLoaded(sp_image *image, int32_t token)
   }
   
   sp_link *link = sp_link_create_from_image(image);
-  
   sp_link_add_ref(link);
-  
   jobject jLink = createJLinkInstance(env,link);
-  
   sp_link_release(link);
-  
-  (*env)->CallVoidMethod(env,g_mediaLoadedListener,method,token,jLink,NULL,NULL);
+
+  size_t size;
+  const void* pData = sp_image_data(image, &size);
+  jbyteArray byteArray = (*env)->NewByteArray(env, size );
+  jboolean isCopy = 0;
+  jbyte* pByteData = (*env)->GetByteArrayElements(env, byteArray, &isCopy );
+  size_t i;
+  for (i = 0; i < size; i++)
+    pByteData[i] = ( (byte*) pData)[i];
+  (*env)->ReleaseByteArrayElements(env,byteArray, pByteData, 0);
+  setObjectObjectField(env,imageInstance,"bytes","[B",byteArray);
+
+  setObjectBooleanField(env,imageInstance,"loaded",JNI_TRUE);
+  (*env)->CallVoidMethod(env,g_mediaLoadedListener,method,0,jLink,NULL,NULL);
+  (*env)->DeleteGlobalRef(env,imageInstance);
   if (checkException(env) != 0)
   {
       log_error("callbacks","signalImageLoaded","Exception while calling listener");
@@ -814,7 +823,7 @@ int signalPlaylistLoaded(sp_playlist *playlist, int32_t token)
   
 }
 
-int signalAlbumBrowseLoaded(sp_albumbrowse *albumBrowse, int32_t token)
+int signalAlbumBrowseLoaded(sp_albumbrowse *albumBrowse, jobject albumInstance)
 {
   JNIEnv* env = NULL;
   jclass aClass;
@@ -822,7 +831,6 @@ int signalAlbumBrowseLoaded(sp_albumbrowse *albumBrowse, int32_t token)
   
   sp_album *album = NULL;
   sp_link *albumLink = NULL;
-  jobject albumInstance = NULL;
   jclass jClass;
   
   if (!g_mediaLoadedListener)
@@ -844,8 +852,6 @@ int signalAlbumBrowseLoaded(sp_albumbrowse *albumBrowse, int32_t token)
     log_error("jahspotify","signalAlbumBrowseLoaded","Could not load jahnotify.media.Album");
     goto fail;
   }
-  
-  albumInstance = createInstanceFromJClass(env, jClass);
   
   aMethod = (*env)->GetMethodID(env, g_mediaLoadedListenerClass, "album", "(ILjahspotify/media/Album;)V");
   
@@ -878,8 +884,10 @@ int signalAlbumBrowseLoaded(sp_albumbrowse *albumBrowse, int32_t token)
   // Pass it up in the callback
   populateJAlbumInstanceFromAlbumBrowse(env,album, albumBrowse,albumInstance);
   
-  
-  (*env)->CallVoidMethod(env, g_mediaLoadedListener, aMethod, token, albumInstance);
+  (*env)->CallVoidMethod(env, g_mediaLoadedListener, aMethod, 0, albumInstance);
+  setObjectBooleanField(env,albumInstance,"loaded",JNI_TRUE);
+  (*env)->DeleteGlobalRef(env, albumInstance);
+
   if (checkException(env) != 0)
   {
     log_error("callbacks","signalAlbumBrowseLoaded","Exception while calling callback");

@@ -156,6 +156,27 @@ jint setObjectFloatField(JNIEnv * env, jobject obj, const char *name, jfloat val
     return 0;
 }
 
+jint setObjectBooleanField(JNIEnv * env, jobject obj, const char *name, jboolean value)
+{
+    jclass clazz;
+    jfieldID field;
+
+    clazz = (*env)->GetObjectClass(env, obj);
+    if (clazz == NULL)
+        return 1;
+
+	field = (*env)->GetFieldID(env, clazz, name, "Z");
+    (*env)->DeleteLocalRef(env, clazz);
+
+	if (field == NULL)
+        return 1;
+
+	(*env)->SetBooleanField(env, obj, field, value);
+	
+	return 0;
+}
+
+
 jint getObjectLongField(JNIEnv * env, jobject obj, const char *name, jlong *value)
 {
     jclass clazz;
@@ -222,20 +243,20 @@ jint setObjectObjectField(JNIEnv * env, jobject obj,const char *name, char *fiel
     jfieldID field;
     jstring str;
 
-    clazz = (*env)->GetObjectClass(env, obj);
+	clazz = (*env)->GetObjectClass(env, obj);
     if (clazz == NULL)
         return 1;
-    
-    field = (*env)->GetFieldID(env, clazz, name, fieldClassName);
-    
-    (*env)->DeleteLocalRef(env, clazz);
 
-    if (field == NULL)
+	field = (*env)->GetFieldID(env, clazz, name, fieldClassName);
+
+	(*env)->DeleteLocalRef(env, clazz);
+
+	if (field == NULL)
         return 1;
 
-    (*env)->SetObjectField(env, obj, field, value);
+	(*env)->SetObjectField(env, obj, field, value);
 
-    return 0;
+	return 0;
 }
 
 

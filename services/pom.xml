@@ -38,12 +38,6 @@
     <dependencies>
 
         <dependency>
-            <groupId>rome</groupId>
-            <artifactId>rome</artifactId>
-            <version>0.9</version>
-        </dependency>
-
-        <dependency>
             <groupId>jahspotify</groupId>
             <artifactId>jahspotify-storage</artifactId>
         </dependency>
@@ -83,12 +77,6 @@
             <groupId>com.googlecode.jen-api</groupId>
             <artifactId>jen-api</artifactId>
             <version>4.x.p</version>
-        </dependency>
-
-        <dependency>
-            <groupId>cglib</groupId>
-            <artifactId>cglib</artifactId>
-            <version>2.2.2</version>
         </dependency>
 
     </dependencies>

@@ -2,9 +2,17 @@ package jahspotify.storage;
 
 import jahspotify.JahSpotify;
 import jahspotify.impl.JahSpotifyImpl;
-import jahspotify.media.*;
+import jahspotify.media.Album;
+import jahspotify.media.Artist;
+import jahspotify.media.Image;
+import jahspotify.media.ImageSize;
+import jahspotify.media.Link;
+import jahspotify.media.Playlist;
+import jahspotify.media.Track;
 import jahspotify.storage.media.MediaStorage;
-import org.apache.commons.logging.*;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * @author Johan Lindquist
@@ -51,7 +59,7 @@ public class StorageAwareJahspotify extends JahSpotifyImpl
 
         album = super.readAlbum(uri);
 
-        if (_mediaStorage != null && album != null)
+        if (_mediaStorage != null && album != null && album.isLoaded())
         {
             _mediaStorage.store(album);
         }
@@ -73,7 +81,7 @@ public class StorageAwareJahspotify extends JahSpotifyImpl
         }
         artist = super.readArtist(uri);
 
-        if (_mediaStorage != null && artist != null)
+        if (_mediaStorage != null && artist != null && artist.isLoaded())
         {
             _mediaStorage.store(artist);
         }
@@ -143,7 +151,7 @@ public class StorageAwareJahspotify extends JahSpotifyImpl
 
         track = super.readTrack(uri);
 
-        if (_mediaStorage != null && track != null)
+        if (_mediaStorage != null && track != null && track.isLoaded())
         {
             _mediaStorage.store(track);
         }
@@ -168,7 +176,7 @@ public class StorageAwareJahspotify extends JahSpotifyImpl
     protected void albumLoadedCallback(final int token, final Album album)
     {
         // Store the dang thing
-        if (_mediaStorage != null && album != null)
+        if (_mediaStorage != null && album != null && album.isLoaded())
         {
             _mediaStorage.store(album);
         }
@@ -180,7 +188,7 @@ public class StorageAwareJahspotify extends JahSpotifyImpl
     protected void artistLoadedCallback(final int token, final Artist artist)
     {
         // Store the dang thing
-        if (_mediaStorage != null && artist != null)
+        if (_mediaStorage != null && artist != null && artist.isLoaded())
         {
             _mediaStorage.store(artist);
         }

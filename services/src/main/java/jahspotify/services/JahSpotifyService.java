@@ -18,8 +18,8 @@ public class JahSpotifyService
 {
     private JahSpotify _jahSpotify;
 
-    @Autowired(required = false)
-    @Qualifier(value ="mongodb")
+//    @Autowired(required = false)
+//    @Qualifier(value ="mongodb")
     private MediaStorage _mediaStorage;
 
     @Bean(name="JahSpotify")

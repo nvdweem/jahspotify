@@ -1,6 +1,7 @@
 package jahspotify.media;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
@@ -45,7 +46,7 @@ public class Track extends Media
      * If this track is explicit.
      */
     private boolean explicit;
-    
+
     /**
      * The popularity of the track.
      */
@@ -237,6 +238,15 @@ public class Track extends Media
      */
 	public void setPopularity(int popularity) {
 		this.popularity = popularity;
+	}
+
+    /**
+     * Tracks don't need loading and are always complete.
+     * @return true if the media is complete.
+     */
+	@Override
+	public boolean isLoaded() {
+		return true;
 	}
 
 	@Override

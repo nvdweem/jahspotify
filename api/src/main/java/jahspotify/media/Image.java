@@ -5,14 +5,20 @@ import java.util.Arrays;
 /**
  * @author Johan Lindquist
  */
-public class Image
+public class Image implements Loadable
 {
     private Link id;
     private ImageFormat imageFormat = ImageFormat.JPEG;
     private byte[] bytes;
+    private boolean loaded = false;
 
     public Image()
     {
+    }
+
+    public Image(final Link uri)
+    {
+    	this(uri, null);
     }
 
     public Image(final Link uri, final byte[] bytes)
@@ -50,4 +56,14 @@ public class Image
                 ", imageFormat=" + imageFormat +
                 '}';
     }
+
+	@Override
+	public boolean isLoaded() {
+		return loaded;
+	}
+
+	@Override
+	public void setLoaded(boolean loaded) {
+		this.loaded = loaded;
+	}
 }
