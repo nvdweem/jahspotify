@@ -67,6 +67,22 @@
                 <packaging>dll</packaging>
             </properties>
         </profile>
+        <profile>
+            <id>OSX</id>
+            <activation>
+                <os>
+                    <family>mac</family>
+                </os>
+            </activation>
+            <properties>
+                <OS>mac</OS>
+                <linkeropts>-framework libspotify -ldl</linkeropts>
+                <lstartopts/>
+                <artifact>jahspotify</artifact>
+                <packaging>jnilib</packaging>
+                <compilerparams>"-I/System/Library/Frameworks/JavaVM.framework/Headers"</compilerparams>
+            </properties>
+        </profile>
     </profiles>
 
     <build>
