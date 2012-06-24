@@ -1197,6 +1197,45 @@ void populateJArtistInstanceFromArtistBrowse(JNIEnv *env, sp_artistbrowse *artis
     }
   }
 
+  int numTopTracks = sp_artistbrowse_num_tophit_tracks(artistBrowse);
+  log_error("", "", "Toptracks: %i", numTopTracks);
+  log_error("", "", "Toptracks: %i", numTopTracks);
+  log_error("", "", "Toptracks: %i", numTopTracks);
+  log_error("", "", "Toptracks: %i", numTopTracks);
+  log_error("", "", "Toptracks: %i", numTopTracks);
+  log_error("", "", "Toptracks: %i", numTopTracks);
+  if (numTopTracks > 0)
+  {
+    jmethodID jMethod = (*env)->GetMethodID(env,jClass,"addTopHitTrack","(Ljahspotify/media/Link;)V");
+    
+    if (jMethod == NULL)
+    {
+      log_error("jahspotify","populateJArtistInstanceFromArtistBrowse","Could not load method addTopHitTrack(link) on class Artist");
+      sp_artistbrowse_release(artistBrowse);
+      return;
+    }
+    
+    int count = 0;
+    for (count = 0; count < numTopTracks; count++)
+    {
+      sp_track *track = sp_artistbrowse_tophit_track(artistBrowse,count);
+      if (track)
+      {
+        sp_track_add_ref(track);
+        sp_link *trackLink = sp_link_create_from_track(track,0);
+        if (trackLink)
+        {
+          sp_link_add_ref(trackLink);
+          jobject albumJLink = createJLinkInstance(env,trackLink);
+          // set it on the track
+          (*env)->CallVoidMethod(env,artistInstance,jMethod,albumJLink);
+          sp_link_release(trackLink);
+        }
+        sp_track_release(track);
+      }
+    }
+  }
+
   const char *bios = sp_artistbrowse_biography(artistBrowse);
 
   if (bios)

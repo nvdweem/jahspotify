@@ -42,6 +42,11 @@ public class Artist extends Media
     private List<Link> albums;
 
     /**
+     * A {@link List} of tracks.
+     */
+    private List<Link> topHitTracks;
+
+    /**
      * A {@link List} of similar artists.
      */
     private List<Link> similarArtists;
@@ -231,6 +236,25 @@ public class Artist extends Media
             similarArtists = new ArrayList<Link>();
         }
         similarArtists.add(similarArtist);
+    }
+
+    public List<Link> getTopHitTracks()
+    {
+        return topHitTracks;
+    }
+
+    public void setTopHitTracks(final List<Link> topHitTracks)
+    {
+        this.topHitTracks = topHitTracks;
+    }
+
+    public void addTopHitTrack(final Link topHitTrack)
+    {
+        if (topHitTracks == null)
+        {
+            topHitTracks = new ArrayList<Link>();
+        }
+        topHitTracks.add(topHitTrack);
     }
 
     /**
