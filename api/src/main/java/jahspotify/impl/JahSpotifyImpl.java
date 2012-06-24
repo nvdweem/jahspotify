@@ -108,28 +108,6 @@ public class JahSpotifyImpl implements JahSpotify
             }
         });
 
-        registerNativeSearchCompleteListener(new NativeSearchCompleteListener()
-        {
-            @Override
-            public void searchCompleted(final int token, final SearchResult searchResult)
-            {
-                _log.debug(String.format("Search completed: token=%d searchResult=%s", token, searchResult));
-
-                if (token > 0)
-                {
-                    final SearchListener searchListener = _prioritySearchListeners.get(token);
-                    if (searchListener != null)
-                    {
-                        searchListener.searchComplete(searchResult);
-                    }
-                }
-                for (SearchListener searchListener : _searchListeners)
-                {
-                    searchListener.searchComplete(searchResult);
-                }
-            }
-        });
-
         registerNativePlaybackListener(new NativePlaybackListener()
         {
             @Override
@@ -168,7 +146,48 @@ public class JahSpotifyImpl implements JahSpotify
                 }
                 return null;
             }
+
+			@Override
+			public void setAudioFormat(final int rate, final int channels) {
+                for (PlaybackListener listener : _playbackListeners)
+                {
+                	listener.setAudioFormat(rate, channels);
+                }
+			}
+
+			@Override
+			public int addToBuffer(byte[] buffer) {
+				int highestReturn = 0;
+				for (PlaybackListener listener : _playbackListeners)
+                {
+					highestReturn = Math.max(listener.addToBuffer(buffer), highestReturn);
+                }
+				return highestReturn;
+			}
         });
+
+        registerNativeSearchCompleteListener(new NativeSearchCompleteListener()
+        {
+            @Override
+            public void searchCompleted(final int token, final SearchResult searchResult)
+            {
+                _log.debug(String.format("Search completed: token=%d searchResult=%s", token, searchResult));
+
+                if (token > 0)
+                {
+                    final SearchListener searchListener = _prioritySearchListeners.get(token);
+                    if (searchListener != null)
+                    {
+                        searchListener.searchComplete(searchResult);
+                    }
+                }
+                for (SearchListener searchListener : _searchListeners)
+                {
+                    searchListener.searchComplete(searchResult);
+                }
+            }
+        });
+
         registerNativeLibraryListener(new NativeLibraryListener()
         {
 
@@ -686,18 +705,6 @@ public class JahSpotifyImpl implements JahSpotify
         nativeShutdown();
     }
 
-    @Override
-    public void setCurrentGain(final float gain)
-    {
-        setAudioGain(gain);
-    }
-
-    @Override
-    public float getCurrentGain()
-    {
-        return getAudioGain();
-    }
-
     private void populateEmptyEntries(final LibraryEntry entry, int currentLevel, int requiredLevel)
     {
         final Link.Type type = Link.Type.valueOf(entry.getType());
@@ -920,24 +927,15 @@ public class JahSpotifyImpl implements JahSpotify
     private native Playlist retrievePlaylist(String uri);
 
     private native int nativePlayTrack(String uri);
-
     private native void nativeStopTrack();
-
     private native void nativeTrackSeek(int offset);
 
+    private native void nativeInitiateSearch(final int i, NativeSearchParameters token);
     private native boolean registerNativeConnectionListener(final NativeConnectionListener nativeConnectionListener);
-
     private native boolean registerNativeSearchCompleteListener(final NativeSearchCompleteListener nativeSearchCompleteListener);
-
     private native boolean registerNativeLibraryListener(NativeLibraryListener nativeLibraryListener);
-
-    private native boolean registerNativePlaybackListener(NativePlaybackListener nativePlaybackListener);
 
     private native boolean nativeShutdown();
 
-    private native void nativeInitiateSearch(final int i, NativeSearchParameters token);
-
-    private native void setAudioGain(float gain);
-
-    private native float getAudioGain();
+    private native boolean registerNativePlaybackListener(NativePlaybackListener playbackListener);
 }

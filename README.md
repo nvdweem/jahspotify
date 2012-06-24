@@ -5,15 +5,8 @@ Jah'Spotify Library
 ## Note
 This project aims more to be a library for other Spotify tools then to be a tool on itself. Use the johanlindquist/jahspotify repository for the Spotify tool.
 
-The aim of this project will be to deliver a native project with as few dependencies as possible. For now the following dependencies which could be stripped are required:
-* <del>GSON</del>
-* <del>HTTP components</del>
-* <del>Spring</del>
-* <del>jen-api</del>
-* <del>MongoDB</del>
-* OpenAL (for native part)
-
-Removing the Spring dependency makes the coupling between the components a bit tighter, but it makes the library more lightweight.
+The aim of this project will be to deliver a native project with as few dependencies as possible but which still delivers all libspotify functions, 
+while being available on all (x86) platforms.
 
 ## Introduction
 
@@ -30,9 +23,6 @@ Currently supports:
 * add tracks to a queue (single queue currently supported)
 * play tracks
 * pause/skip functions
-* dynamic playlist using echonest apis
-* basic historical track list view
-* very basic android app for remote control
 
 ## To build
 
@@ -61,20 +51,13 @@ Finally, execute the Maven build
 #### Before compiling
 
 1. Download MinGW and put the bin folder in your PATH.
-2. Download the OpenAL SDK from and copy the include folder to the MinGW include folder and rename it to AL
-3. The native pom.xml has a reference to a local LibSpotify folder. Change this to your own Spotify folder. You'll get an error that the api.h file can't be found if you don't.
-4. Add a reference to your OpenAL installation folder
-
-You can find the OpenAL SDK at:
-
-    http://connect.creativelabs.com/developer/Wiki/OpenAL%20SDK%20for%20Windows.aspx
+2. Create an environment variable 'LIB_SPOTIFY' and point it to where you unpacked libspotify.
 
 ### Running on Windows
 
 For windows, you will need to download a few more dependencies:
 
 - pthread (http://sources.redhat.com/pthreads-win32/). pthreadGC2.dll needs to be in your path.
-- I didn't have to add any paths to OpenAL but I installed the SDK. Let me know if you get a message complaining that not all dependencies are available.
 
 ## Modules
 

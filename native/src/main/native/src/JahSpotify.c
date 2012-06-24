@@ -23,13 +23,13 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <pthread.h>
 
 #include "Logging.h"
 #include "JNIHelpers.h"
 #include "JahSpotify.h"
 #include "jahspotify_impl_JahSpotifyImpl.h"
 #include "AppKey.h"
-#include "audio.h"
 #include "Callbacks.h"
 #include "ThreadHelpers.h"
 
@@ -47,8 +47,6 @@ jobject g_searchCompleteListener = NULL;
 jobject g_mediaLoadedListener = NULL;
 extern jclass g_linkClass;
 
-/// The output queue for audo data
-static audio_fifo_t g_audiofifo;
 /// Synchronization mutex for the main thread
 static pthread_mutex_t g_notify_mutex;
 /// Synchronization condition variable for the main thread
@@ -373,41 +371,25 @@ static void SP_CALLCONV notify_main_thread ( sp_session *sess )
 static int SP_CALLCONV music_delivery ( sp_session *sess, const sp_audioformat *format,
                             const void *frames, int num_frames )
 {
-    audio_fifo_t *af = &g_audiofifo;
-    audio_fifo_data_t *afd;
-    size_t s;
+	if (num_frames == 0)
+		return 0; // Audio discontinuity, do nothing
 
-    if (num_frames == 0)
-        return 0; // Audio discontinuity, do nothing
+	JNIEnv* env = NULL;
+	if (!retrieveEnv((JNIEnv*)&env))
+		return 0;
 
+	invokeVoidMethod_II(env, g_playbackListener, "setAudioFormat", (jint)format->sample_rate, (jint)format->channels);
 
-    pthread_mutex_lock(&af->mutex);
+	int sampleSize = 2 * format->channels;
+	int numBytes = num_frames * sampleSize;
+	jbyteArray byteArray = (*env)->NewByteArray(env, numBytes );
+	int i;
+    for (i=0; i<numBytes; i++)
+		(*env)->SetByteArrayRegion( env, byteArray, i, 1, &( (jbyte*) frames)[i] );
 
-    /* Buffer one second of audio */
-    if (af->qlen > format->sample_rate)
-    {
-        pthread_mutex_unlock(&af->mutex);
-        return 0;
-    }
-
-    s = num_frames * sizeof(int16_t) * format->channels;
-
-    afd = calloc(1, sizeof(audio_fifo_data_t) + s);
-    memcpy(afd->samples, frames, s);
-
-    afd->nsamples = num_frames;
-
-    afd->rate = format->sample_rate;
-    afd->channels = format->channels;
-
-    TAILQ_INSERT_TAIL(&af->q, afd, link);
-    af->qlen += num_frames;
-
-    pthread_cond_signal(&af->cond);
-
-    pthread_mutex_unlock(&af->mutex);
-
-    return num_frames;
+	int buffered;
+	invokeIntMethod_B(env, g_playbackListener, "addToBuffer", &buffered, byteArray);
+	return buffered;
 }
 
 
@@ -1558,12 +1540,6 @@ JNIEXPORT jint JNICALL Java_jahspotify_impl_JahSpotifyImpl_nativePlayTrack (JNIE
 
     log_debug("jahspotify","nativePlayTrack","Initiating play: %s", nativeURI);
 
-    if (!g_audio_initialized)
-    {
-        audio_init(&g_audiofifo);
-        g_audio_initialized = JNI_TRUE;
-    }
-
     // For each track, read out the info and populate all of the info in the Track instance
     sp_link *link = sp_link_create_from_string(nativeURI);
     if (link)
@@ -1674,18 +1650,6 @@ exit:
 
 }
 
-JNIEXPORT jfloat JNICALL Java_jahspotify_impl_JahSpotifyImpl_getAudioGain( JNIEnv *env, jobject obj )
-{
-    float gain = get_audio_gain();
-    return gain;
-}
-
-JNIEXPORT void JNICALL Java_jahspotify_impl_JahSpotifyImpl_setAudioGain( JNIEnv *env, jobject obj, jfloat gain)
-{
-    set_audio_gain(gain);
-}
-
-
 /**
  * A track has ended. Remove it from the playlist.
  *
@@ -1721,8 +1685,6 @@ static void track_ended(void)
             free(trackLinkStr);
         }
     }
-
-
 }
 
 JNIEXPORT jint JNICALL Java_jahspotify_impl_JahSpotifyImpl_initialize ( JNIEnv *env, jobject obj, jstring username, jstring password )

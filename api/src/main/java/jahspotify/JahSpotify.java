@@ -1,6 +1,14 @@
 package jahspotify;
 
-import jahspotify.media.*;
+import jahspotify.media.Album;
+import jahspotify.media.Artist;
+import jahspotify.media.Image;
+import jahspotify.media.Library;
+import jahspotify.media.LibraryEntry;
+import jahspotify.media.Link;
+import jahspotify.media.Playlist;
+import jahspotify.media.Track;
+import jahspotify.media.User;
 
 /** Main interface into the Spotify system.  This provides the API's required to login and interact with the Spotify
  * APIs.
@@ -142,6 +150,4 @@ public interface JahSpotify
      */
     public void shutdown();
 
-    float getCurrentGain();
-    void setCurrentGain(float gain);
 }

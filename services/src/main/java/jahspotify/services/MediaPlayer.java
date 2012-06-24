@@ -2,367 +2,258 @@ package jahspotify.services;
 
 import jahspotify.JahSpotify;
 import jahspotify.PlaybackListener;
+import jahspotify.impl.JahSpotifyImpl;
 import jahspotify.media.Link;
+import jahspotify.media.Track;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.FloatControl;
+import javax.sound.sampled.SourceDataLine;
 
 /**
- * @author Johan Lindquist
+ * Class which plays the music from libspotify.
+ * @author Niels
  */
-public class MediaPlayer
-{
-    private MediaPlayerState _mediaPlayerState = MediaPlayerState.STOPPED;
-    private Log _log = LogFactory.getLog(MediaPlayer.class);
-    private BlockingQueue<Integer> _commandQueue = new ArrayBlockingQueue<Integer>(1, true);
-    private QueueTrack _currentTrack;
-    private Set<MediaPlayerListener> _mediaPlayerListeners = new HashSet<MediaPlayerListener>();
+public class MediaPlayer implements PlaybackListener {
+	private transient final JahSpotify spotify = JahSpotifyImpl.getInstance();
+	private static final int MAX_HISTORY = 50;
 
-    public static final int SKIP = 0;
-    public static final int QUIT = 1;
-    public static final int STOP_PLAY = 2;
+	private List<Track> history = new ArrayList<Track>();
+	private int rate = 0, channels = 0;
+	private int positionOffset = 0;
+	private SourceDataLine audio;
+	private Track currentTrack;
+	private boolean playing = false;
+	private int volume = 100;
 
-    private QueueManager _queueManager = QueueManager.getInstance();
+	private static MediaPlayer instance;
+	public static MediaPlayer getInstance() {
+		if (instance == null)
+			instance = new MediaPlayer();
+		return instance;
+	}
 
-    // Defines whether or not play should start immediately when a track is added to an empty queue
-    private boolean _autoPlay = true;
+	/**
+	 * Reset counters.
+	 */
+	public void changeSong() {
+		audio = null;
+		positionOffset = 0;
+	}
 
-    private JahSpotifyService _jahSpotifyService = JahSpotifyService.getInstance();
-    private JahSpotify _jahSpotify;
+	/**
+	 * Queue a track.
+	 *
+	 * @param track
+	 */
+	public void play() {
+		start();
+	}
 
-    private static MediaPlayer instance;
-    public static MediaPlayer getInstance() {
-    	if (instance == null) {
-    		instance = new MediaPlayer();
-    		instance.initialize();
-    		instance._autoPlay = Boolean.valueOf(System.getProperty("jahspotify.player.auto-play-on-track-added"));
-    	}
-    	return instance;
-    }
+	/**
+	 * Start playing if nothing is playing.
+	 */
+	private void start() {
+		if (currentTrack == null)
+			next();
+	}
 
-    public void shutdown()
-    {
-        try
-        {
-            // Issue the shutdown token
-            if (!_commandQueue.offer(QUIT, 1000, TimeUnit.MILLISECONDS))
-            {
-                // If not accepted, simply report so
-                _log.debug("Command to quit not accepted");
-            }
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-    }
+	/**
+	 * Go to the next track.
+	 */
+	public void endOfTrack() {
+		history.add(0, currentTrack);
+		trimHistory();
+		currentTrack = null;
+		next();
+	}
 
-    private void initialize()
-    {
-        _queueManager.addQueueListener(new AbstractQueueListener()
-        {
-            @Override
-            public void tracksAdded(final Link queue, final QueueTrack... queueTracks)
-            {
-                _log.debug("Tracks added: " + Arrays.asList(queueTracks));
-                _log.debug("Auto-play: " + (_autoPlay ? "yes" : "no"));
-                _log.debug("Current track: " + _currentTrack);
-                if (_autoPlay && _currentTrack == null)
-                {
-                    nextTrack();
-                }
-            }
-        });
-        _jahSpotify = _jahSpotifyService.getJahSpotify();
+	/**
+	 * Try to play the next track.
+	 *
+	 * @return
+	 */
+	private boolean next() {
+		QueueTrack qTrack = QueueManager.getInstance().getNextQueueTrack();
+		if (qTrack == null) return false;
+		Track track = spotify.readTrack(qTrack.getTrackUri());
 
-        _jahSpotify.addPlaybackListener(new PlaybackListener()
-        {
-            @Override
-            public void trackStarted(final Link link)
-            {
-                _log.debug("Track started: " + link);
-                _log.debug("Current track: " + _currentTrack);
+		currentTrack = track;
+		playNow(track);
+		return true;
+	}
 
-                _mediaPlayerState = MediaPlayerState.PLAYING;
+	/**
+	 * Immediately start playing a song.
+	 *
+	 * @param track
+	 * @return
+	 */
+	private void playNow(Track track) {
+		spotify.play(track.getId());
+		currentTrack = track;
+		changeSong();
+		playing = true;
+	}
 
-                _log.debug("Notifying " + _mediaPlayerListeners.size() + " media player listeners");
-                for (final MediaPlayerListener mediaPlayerListener : _mediaPlayerListeners)
-                {
-                    mediaPlayerListener.trackStart(_currentTrack);
-                }
+	/**
+	 * Toggle playing state.
+	 */
+	public void pause() {
+		if (!playing && currentTrack == null) {
+			next();
+			return;
+		}
+		if (playing)
+			spotify.pause();
+		else
+			spotify.resume();
+		playing = !playing;
+	}
 
-            }
+	public void skip() {
+		endOfTrack();
+	}
 
-            @Override
-            public void trackEnded(final Link link, boolean forcedEnd)
-            {
-                try
-                {
-                    _log.debug("End of track: " + link + (forcedEnd ? " (forced)" : ""));
+	public void prev() {
+		// Prev replays the current song if it is pressed within the first 5
+		// seconds.
+		if (getPosition() > 5) {
+			seek(0);
+			return;
+		}
 
-                    for (final MediaPlayerListener mediaPlayerListener : _mediaPlayerListeners)
-                    {
-                        mediaPlayerListener.trackEnd(_currentTrack, forcedEnd);
-                    }
+		if (!history.isEmpty())
+			playNow(history.remove(0));
+	}
 
-                    if (!forcedEnd)
-                    {
-                        if (_currentTrack == null)
-                        {
-                            // Hmm
-                            _log.debug("Current track is already null!");
-                            return;
-                        }
+	public void seek(int position) {
+		if (currentTrack != null) {
+			audio.flush();
+			spotify.seek(position * 1000);
+			seekCallback(position * 1000);
+		}
+	}
 
-                        _mediaPlayerState = MediaPlayerState.STOPPED;
-                        _currentTrack = null;
-                        _commandQueue.add(SKIP);
-                    }
+	public void seekCallback(int position) {
+		audio = null;
+		positionOffset = position / 1000;
+	}
 
-                }
-                catch (Exception e)
-                {
-                    _log.error("Error handling track ended callback: " + e.getMessage(), e);
-                }
-            }
+	/**
+	 * Called from libspotify.
+	 * @param buffer
+	 * @return
+	 */
+	@Override
+	public int addToBuffer(byte[] buffer) {
+		if (audio == null)
+			return 0;
+		int available = audio.available();
+		if (available == 0)
+			return 0;
+		int bufferSize = buffer.length;
+		int toWrite = Math.min(available, bufferSize);
+		return audio.write(buffer, 0, toWrite) / 4;
+	}
 
-            @Override
-            public Link nextTrackToPreload()
-            {
-                // Query all media play listeners - since there are many of them, they
-                // all assign a weight to the next track to be played.  Highest weight
-                // will win.  This allows the current queue to override any 'dynamic' and 'similar'
-                // tracks from being played until the queue is empty (for example)
+	/**
+	 * Called from libspotify.
+	 * @param rate
+	 * @param channels
+	 */
+	@Override
+	public void setAudioFormat(int rate, int channels) {
+		if (audio != null && rate == this.rate && channels == this.channels)
+			return;
+		this.rate = rate;
+		this.channels = channels;
 
-                _log.debug("Evaluating next track to pre-load");
+		try {
+			AudioFormat format = new AudioFormat(rate, 8 * channels, channels,
+					true, false);
+			format = new AudioFormat(format.getEncoding(),
+					format.getSampleRate(), format.getSampleSizeInBits(),
+					format.getChannels(), format.getFrameSize(),
+					format.getFrameRate(), false);
 
-                final List<QueueNextTrack> nextTracks = new ArrayList<QueueNextTrack>();
-                for (MediaPlayerListener mediaPlayerListener : _mediaPlayerListeners)
-                {
-                    QueueNextTrack queueNextTrack = mediaPlayerListener.nextTrackToQueue();
-                    if (queueNextTrack != null)
-                    {
-                        nextTracks.add(queueNextTrack);
-                    }
-                }
+			audio = AudioSystem.getSourceDataLine(format);
+			setVolumeToAudio(volume);
+			audio.open(format);
+			audio.start();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 
-                if (!nextTracks.isEmpty())
-                {
-                    _log.info("Received " + nextTracks.size() + " track(s) for next track");
+	public boolean isPlaying() {
+		return playing;
+	}
 
-                    // Sort the tracks according to their weight
-                    Collections.sort(nextTracks);
+	public Track getCurrentTrack() {
+		return currentTrack;
+	}
 
-                    _log.info("Next tracks sorted according to weight: " + nextTracks);
+	public int getDuration() {
+		if (currentTrack == null)
+			return 0;
+		return currentTrack.getLength() / 1000;
+	}
 
-                    // Take the next track in the collection no matter what - sorting would
-                    // have prepared the list correctly in any case
-                    QueueNextTrack queueTrack = nextTracks.get(0);
+	public int getPosition() {
+		if (audio == null)
+			return 0;
+		return positionOffset + audio.getFramePosition() / this.rate;
+	}
 
-                    // We never repeat the current track - use repeat function instead
-                    if (!queueTrack.equals(_currentTrack))
-                    {
-                        _log.info("Next track selected: " + queueTrack);
-                        return queueTrack.getTrackUri();
-                    }
+	public int getVolume() {
+		return volume;
+	}
 
-                }
-                _log.debug("No tracks to pre-load found");
-                return null;
-            }
-        });
+	public void setVolume(int volume) {
+		this.volume = volume;
+		setVolumeToAudio(volume);
+	}
 
-        final Thread t = new Thread(new Runnable()
-        {
-            @Override
-            public void run()
-            {
+	private void setVolumeToAudio(int volume) {
+		if (audio.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
+			FloatControl volumeControl = (FloatControl) audio
+					.getControl(FloatControl.Type.MASTER_GAIN);
+			float range = volumeControl.getMaximum()
+					- volumeControl.getMinimum();
+			volumeControl.setValue(volumeControl.getMinimum() + range
+					* (volume / 100f));
+		}
+	}
 
-                boolean keepRunning = true;
-                while (keepRunning)
-                {
-                    try
-                    {
-                        final Integer command = _commandQueue.poll(200, TimeUnit.MILLISECONDS);
-                        if (command == null)
-                        {
-                            continue;
-                        }
-                        switch (command)
-                        {
-                            case SKIP:
-                                final QueueTrack dequeuedTrack = _queueManager.getNextQueueTrack();
+	/**
+	 * Trims the history to always keep at most 50 tracks.
+	 */
+	private void trimHistory() {
+		while (history.size() > MAX_HISTORY)
+			history.remove(MAX_HISTORY);
+	}
 
-                                if (dequeuedTrack != null)
-                                {
-                                    _log.debug("Initiating play of: " + dequeuedTrack);
-                                    _currentTrack = dequeuedTrack;
-                                    _jahSpotify.play(dequeuedTrack.getTrackUri());
-                                }
-                                else
-                                {
-                                    // FIXME: This should handle the case where the last command was 'skip' and
-                                    // the queue was empty.  Play should stop
-                                    _log.debug("Queue is empty, will stop play");
-                                    _jahSpotify.stop();
-                                    _currentTrack = null;
-                                }
-                                break;
-                            case QUIT:
-                                keepRunning = false;
-                                break;
-                            case STOP_PLAY:
-                                _jahSpotify.stop();
-                                break;
-                            default:
-                                _log.debug("Unrecognised command: " + command);
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        _log.error("Error in queue monitor: " + e.getMessage(), e);
-                    }
-                }
+	@Override
+	public void trackStarted(Link link) {
 
-            }
-        });
-        t.setDaemon(true);
-        t.start();
-    }
+	}
 
+	@Override
+	public void trackEnded(Link link, boolean forcedEnd) {
+		if (!next())
+			pause();
+	}
 
+	@Override
+	public Link nextTrackToPreload() {
+		QueueTrack track = QueueManager.getInstance().peekAtNextTrack();
+		if (track == null) return null;
+		return track.getTrackUri();
+	}
 
-    public void pause()
-    {
-        switch (_mediaPlayerState)
-        {
-            case PLAYING:
-                _jahSpotify.pause();
-                _mediaPlayerState = MediaPlayerState.PAUSED;
-                for (MediaPlayerListener mediaPlayerListener : _mediaPlayerListeners)
-                {
-                    mediaPlayerListener.paused(_currentTrack);
-                }
-                break;
-            default:
-                // FIXME: Should really do something
-        }
-    }
-
-    public void seek(int offset)
-    {
-        switch (_mediaPlayerState)
-        {
-            case PLAYING:
-                _jahSpotify.seek(offset);
-                for (MediaPlayerListener mediaPlayerListener : _mediaPlayerListeners)
-                {
-                    mediaPlayerListener.seek(_currentTrack, offset);
-                }
-                break;
-            default:
-                // FIXME: Should really do something
-        }
-    }
-
-    public void stop()
-    {
-        switch (_mediaPlayerState)
-        {
-            case PLAYING:
-            case PAUSED:
-                _jahSpotify.stop();
-                _mediaPlayerState = MediaPlayerState.STOPPED;
-                for (MediaPlayerListener mediaPlayerListener : _mediaPlayerListeners)
-                {
-                    mediaPlayerListener.stopped(_currentTrack);
-                }
-                break;
-            default:
-                // FIXME: Should really do something
-        }
-    }
-
-    public void play()
-    {
-        switch (_mediaPlayerState)
-        {
-            case PAUSED:
-                _jahSpotify.resume();
-                _mediaPlayerState = MediaPlayerState.PLAYING;
-                for (MediaPlayerListener mediaPlayerListener : _mediaPlayerListeners)
-                {
-                    mediaPlayerListener.resume(_currentTrack);
-                }
-                break;
-            case STOPPED:
-                // If the current track is not null, we stopped play in the middle of the track
-                if (_currentTrack != null)
-                {
-                    _jahSpotify.play(_currentTrack.getTrackUri());
-                }
-                //nextTrack();
-                break;
-            default:
-                // FIXME: Should really do something
-        }
-    }
-
-    private void nextTrack()
-    {
-        try
-        {
-            _commandQueue.put(SKIP);
-        }
-        catch (InterruptedException e)
-        {
-            e.printStackTrace();
-        }
-    }
-
-    public void skip()
-    {
-        // FIXME: Should also signal track skip with the mediaplayerlistener
-        switch (_mediaPlayerState)
-        {
-            case PLAYING:
-            case PAUSED:
-            case STOPPED:
-                nextTrack();
-                break;
-            default:
-                // FIXME: Should really do something
-        }
-
-    }
-
-    public MediaPlayerState getMediaPlayerState()
-    {
-        return _mediaPlayerState;
-    }
-
-    public void addMediaPlayerListener(final MediaPlayerListener mediaPlayerListener)
-    {
-        _mediaPlayerListeners.add(mediaPlayerListener);
-    }
-
-    public float getCurrentGain()
-    {
-        return _jahSpotify.getCurrentGain();
-    }
-
-    public void setCurrentGain(final float currentGain)
-    {
-        _jahSpotify.setCurrentGain(currentGain);
-    }
 }

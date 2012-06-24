@@ -31,10 +31,12 @@ public class JahSpotifyService
         if (_jahSpotify == null)
         {
             _jahSpotify = JahSpotifyImpl.getInstance();
+
             if (!_jahSpotify.isStarted())
             {
                 _jahSpotify.login(System.getProperty("jahspotify.spotify.username"), System.getProperty("jahspotify.spotify.password"));
             }
+            _jahSpotify.addPlaybackListener(MediaPlayer.getInstance());
         }
     }
 

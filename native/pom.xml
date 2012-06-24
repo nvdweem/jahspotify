@@ -40,7 +40,7 @@
             </activation>
             <properties>
                 <OS>linux</OS>
-                <linkeropts>-lspotify -lc -lopenal -ldl -lrt</linkeropts>
+                <linkeropts>-lspotify -lc -ldl -lrt</linkeropts>
                 <lstartopts>-z defs</lstartopts>
                 <artifact>libjahspotify</artifact>
                 <packaging>so</packaging>
@@ -56,13 +56,12 @@
             </activation>
             <properties>
                 <OS>windows</OS>
-                <spotify>C:\Users\Niels\workspace\LibSpotify\</spotify>
-                <openal>C:\Program Files (x86)\OpenAL 1.1 SDK\</openal>
+                <spotify>${env.LIB_SPOTIFY}</spotify>
 
                 <compilerparams>"-I${java.home}\..\include"
                     "-I${java.home}\..\include\win32" "-I${spotify}\include"
                 </compilerparams>
-                <linkeropts>"${spotify}lib\libspotify.lib" "${openal}libs\Win32\OpenAL32.lib"</linkeropts>
+                <linkeropts>"${spotify}lib\libspotify.lib"</linkeropts>
                 <lstartopts>-D_JNI_IMPLEMENTATION_ -Wl,--kill-at</lstartopts>
                 <artifact>jahspotify</artifact>
                 <packaging>dll</packaging>

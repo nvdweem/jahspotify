@@ -45,27 +45,44 @@ jint detachThread()
   return 0;
 }
 
-jint invokeNonStaticVoidMethod(JNIEnv *env, jobject instance, const char *methodName, const char *methodSig, void *returnValue, ...)
+jint invokeVoidMethod_II(JNIEnv *env, jobject instance, const char *methodName, jint arg1, jint arg2)
 {
-/*    jclass clazz;
-    jmethodID method;
+	jclass clazz;
+    jmethodID methodId;
 
-    clazz = (*env)->GetObjectClass(env, obj);
+    clazz = (*env)->GetObjectClass(env, instance);
     if (clazz == NULL)
         return 1;
-    
-    method = (*env).GetMethodID(clazz,methodName, methodSig);
 
-    if (method == NULL)
+    methodId = (*env)->GetMethodID(env, clazz, methodName, "(II)V");
+	(*env)->DeleteLocalRef(env, clazz);
+
+    if (methodId == NULL)
         return 1;
+
+	(*env)->CallVoidMethod(env, instance, methodId, arg1, arg2);
+	
+    return 0;
+}
+
+jint invokeIntMethod_B(JNIEnv *env, jobject instance, const char *methodName, int *returnValue, jbyteArray arr)
+{
+	jclass clazz;
+    jmethodID methodId;
+
+    clazz = (*env)->GetObjectClass(env, instance);
+    if (clazz == NULL)
+        return 1;
+
+    methodId = (*env)->GetMethodID(env, clazz, methodName, "([B)I");
+	(*env)->DeleteLocalRef(env, clazz);
+
+    if (methodId == NULL)
+        return 1;
+
+	*returnValue = (*env)->CallIntMethod(env, instance, methodId, arr);
     
-    
-    
-    
-    
-    
-    
-    */
+    return 0;
 }
 
 
