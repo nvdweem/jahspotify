@@ -1193,12 +1193,6 @@ void populateJArtistInstanceFromArtistBrowse(JNIEnv *env, sp_artistbrowse *artis
   }
 
   int numTopTracks = sp_artistbrowse_num_tophit_tracks(artistBrowse);
-  log_error("", "", "Toptracks: %i", numTopTracks);
-  log_error("", "", "Toptracks: %i", numTopTracks);
-  log_error("", "", "Toptracks: %i", numTopTracks);
-  log_error("", "", "Toptracks: %i", numTopTracks);
-  log_error("", "", "Toptracks: %i", numTopTracks);
-  log_error("", "", "Toptracks: %i", numTopTracks);
   if (numTopTracks > 0)
   {
     jmethodID jMethod = (*env)->GetMethodID(env,jClass,"addTopHitTrack","(Ljahspotify/media/Link;)V");
