@@ -507,13 +507,8 @@ static sp_session_callbacks session_callbacks =
 static sp_session_config spconfig =
 {
     .api_version = SPOTIFY_API_VERSION,
-#ifdef _WIN32
-    .cache_location = "c:/temp/jahspotify/cache",
-    .settings_location = "c:/temp/jahspotify/settings",
-#else
-    .cache_location = "/var/lib/jahspotify/cache",
-    .settings_location = "/var/lib/jahspotify/",
-#endif
+    .cache_location = "", // set in main
+    .settings_location = "", // set in main
     .application_key = g_appkey,
     .application_key_size = 0, // Set in main()
     .user_agent = "jahspotify/0.0.1",
@@ -1726,7 +1721,7 @@ static void track_ended(void)
     }
 }
 
-JNIEXPORT jint JNICALL Java_jahspotify_impl_JahSpotifyImpl_initialize ( JNIEnv *env, jobject obj, jstring username, jstring password )
+JNIEXPORT jint JNICALL Java_jahspotify_impl_JahSpotifyImpl_initialize ( JNIEnv *env, jobject obj, jstring tempfolder, jstring username, jstring password )
 {
     sp_session *sp;
     sp_error err;
@@ -1742,8 +1737,18 @@ JNIEXPORT jint JNICALL Java_jahspotify_impl_JahSpotifyImpl_initialize ( JNIEnv *
 
 	pthread_mutex_init ( &g_notify_mutex, NULL );
     pthread_cond_init ( &g_notify_cond, NULL );
-
+	 
     /* Create session */
+	const char* nativeTempFolder = ( *env )->GetStringUTFChars ( env, tempfolder, NULL );
+	char cache[strlen(nativeTempFolder) + 7];
+	strcat(cache, nativeTempFolder);
+	strcat(cache, "/cache");
+
+	spconfig.cache_location = cache; // set in main
+    spconfig.settings_location = nativeTempFolder; // set in main
+	if (nativeTempFolder)
+		(*env)->ReleaseStringUTFChars(env, tempfolder, nativeTempFolder);
+
     spconfig.application_key_size = g_appkey_size;
     err = sp_session_create ( &spconfig, &sp );
 

@@ -62,7 +62,7 @@ public class JahSpotifyImpl implements JahSpotify
     private User _user;
     private AtomicInteger _globalToken = new AtomicInteger(1);
 
-    private native int initialize(String username, String password);
+    private native int initialize(String tempfolder, String username, String password);
 
     private final Set<Link> _lockedTracks = new CopyOnWriteArraySet<Link>();
     private final Set<Link> _lockedArtists = new CopyOnWriteArraySet<Link>();
@@ -401,7 +401,7 @@ public class JahSpotifyImpl implements JahSpotify
     }
 
     @Override
-    public void login(final String username, final String password)
+    public void login(final String tempFolder, final String username, final String password)
     {
         _libSpotifyLock.lock();
         try
@@ -415,7 +415,7 @@ public class JahSpotifyImpl implements JahSpotify
                 @Override
                 public void run()
                 {
-                    initialize(username, password);
+                    initialize(tempFolder, username, password);
                 }
             };
             _jahSpotifyThread.start();
@@ -719,6 +719,7 @@ public class JahSpotifyImpl implements JahSpotify
                 {
                     _log.debug("Loading tracks for playlist " + entry.getId());
                     // load the playlist!
+                    if ("N/A".equals(entry.getId())) return;
                     Playlist playlist = readPlaylist(Link.create(entry.getId()), 0, 0);
                     if (playlist != null)
                     {
