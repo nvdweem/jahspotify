@@ -373,7 +373,7 @@ static int SP_CALLCONV music_delivery ( sp_session *sess, const sp_audioformat *
 {
 	if (num_frames == 0)
 		return 0; // Audio discontinuity, do nothing
-
+	
 	JNIEnv* env = NULL;
 	if (!retrieveEnv((JNIEnv*)&env))
 		return 0;
@@ -382,13 +382,14 @@ static int SP_CALLCONV music_delivery ( sp_session *sess, const sp_audioformat *
 
 	int sampleSize = 2 * format->channels;
 	int numBytes = num_frames * sampleSize;
-	jbyteArray byteArray = (*env)->NewByteArray(env, numBytes );
-	int i;
-    for (i=0; i<numBytes; i++)
-		(*env)->SetByteArrayRegion( env, byteArray, i, 1, &( (jbyte*) frames)[i] );
 
+	jbyteArray byteArray = (*env)->NewByteArray(env, numBytes );
+
+	(*env)->SetByteArrayRegion( env, byteArray, 0, numBytes, (jbyte*) frames );
 	int buffered;
 	invokeIntMethod_B(env, g_playbackListener, "addToBuffer", &buffered, byteArray);
+
+	(*env)->DeleteLocalRef(env, byteArray);
 	return buffered;
 }
 

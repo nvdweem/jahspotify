@@ -151,7 +151,7 @@ public class MediaPlayer implements PlaybackListener {
 	 */
 	@Override
 	public int addToBuffer(byte[] buffer) {
-		if (audio == null)
+		if (audio == null || buffer == null)
 			return 0;
 		int available = audio.available();
 		if (available == 0)
