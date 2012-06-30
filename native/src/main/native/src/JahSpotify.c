@@ -700,8 +700,8 @@ JNIEXPORT jobjectArray JNICALL Java_jahspotify_impl_JahSpotifyImpl_getTracksForP
         (*env)->SetObjectArrayElement(env,strarray,i,str);
         (*env)->DeleteLocalRef(env,str);
     }
+	(*env)->DeleteLocalRef(env,strarray);
     return strarray;
-
 }
 
 char* createLinkStr(sp_link *link)
@@ -738,6 +738,7 @@ exit:
     {
         free(linkStr);
     }
+	if (jString) (*env)->DeleteLocalRef(env, jString);
     return linkInstance;
 
 }
@@ -944,6 +945,7 @@ void populateJAlbumInstanceFromAlbumBrowse(JNIEnv *env, sp_album *album, sp_albu
       {
         jstring str = (*env)->NewStringUTF(env, copyright);
         (*env)->CallVoidMethod(env, albumInstance, addCopyrightMethodID,str);
+		(*env)->DeleteLocalRef(env, str);
       }
     }
   }
@@ -1546,6 +1548,8 @@ JNIEXPORT void JNICALL Java_jahspotify_impl_JahSpotifyImpl_readImage (JNIEnv *en
         }
         sp_link_release(imageLink);
     }
+
+	if (nativeURI) (*env)->ReleaseStringUTFChars(env, uri, (char *)nativeURI);
 }
 
 JNIEXPORT void JNICALL Java_jahspotify_impl_JahSpotifyImpl_nativeTrackSeek(JNIEnv *env, jobject obj, jint offset)
@@ -1736,7 +1740,7 @@ JNIEXPORT jint JNICALL Java_jahspotify_impl_JahSpotifyImpl_initialize ( JNIEnv *
     /* Create session */
 	const char* nativeTempFolder = ( *env )->GetStringUTFChars ( env, tempfolder, NULL );
 	char cache[strlen(nativeTempFolder) + 7];
-	strcat(cache, nativeTempFolder);
+	strcpy(cache, nativeTempFolder);
 	strcat(cache, "/cache");
 
 	spconfig.cache_location = cache; // set in main

@@ -43,6 +43,14 @@ exit:
     {
         free(buffer);
     }
+
+	if (componentStr) 
+		(*env)->DeleteLocalRef(env, componentStr);
+	if (subComponentStr) 
+		(*env)->DeleteLocalRef(env, subComponentStr);
+	if (messageStr) 
+		(*env)->DeleteLocalRef(env, messageStr);
+
     return;   
     
 }
