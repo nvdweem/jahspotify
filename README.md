@@ -2,6 +2,12 @@
 Jah'Spotify Library
 ===============================================================================
 
+# This project has moved
+
+Because this project has been moving away from the original Jah'Spotify source there is no point in keeping this a forked repository. The latest version
+will be available at:
+    https://github.com/nvdweem/libjahspotify
+
 ## Note
 This project aims more to be a library for other Spotify tools then to be a tool on itself. Use the johanlindquist/jahspotify repository for the Spotify tool.
 
