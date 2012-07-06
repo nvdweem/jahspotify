@@ -31,7 +31,7 @@ public class MediaPlayer implements PlaybackListener {
 	private int volume = 100;
 
 	private static MediaPlayer instance;
-	public static MediaPlayer getInstance() {
+	public static synchronized MediaPlayer getInstance() {
 		if (instance == null)
 			instance = new MediaPlayer();
 		return instance;

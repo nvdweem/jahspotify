@@ -19,7 +19,7 @@ public class SearchEngine
     private JahSpotify _jahSpotify;
 
     private static SearchEngine instance;
-    public static SearchEngine getInstance() {
+    public static synchronized SearchEngine getInstance() {
     	if (instance == null) {
     		instance = new SearchEngine();
     		instance.initialize();

@@ -40,7 +40,6 @@ sp_session *g_sess = NULL;
 /// Handle to the curren track
 sp_track *g_currenttrack = NULL;
 
-jobject g_libraryListener = NULL;
 jobject g_connectionListener = NULL;
 jobject g_playbackListener = NULL;
 jobject g_searchCompleteListener = NULL;
@@ -154,18 +153,7 @@ static void SP_CALLCONV playlist_update_in_progress ( sp_playlist *pl, bool done
     log_debug("jahspotify","playlist_update_in_progress","Update in progress: %s (done: %s)", name, (done ? "yes" : "no"));
 
     if (done)
-    {
-        link = sp_link_create_from_playlist(pl);
-        if (link)
-        {
-            playListlinkStr =  calloc ( 1, sizeof ( char ) * ( 100 ) );
-            sp_link_as_string(link,playListlinkStr,100);
-            sp_link_release(link);
-            signalPlaylistSeen(name,playListlinkStr);
-        }
-
-    }
-
+        signalPlaylistLoaded(pl, 0);
 }
 
 static void SP_CALLCONV playlist_metadata_updated ( sp_playlist *pl, void *userdata )
@@ -186,7 +174,6 @@ static sp_playlist_callbacks pl_callbacks =
     .playlist_state_changed = &playlist_state_changed,
     .playlist_update_in_progress = &playlist_update_in_progress,
     .playlist_metadata_updated = &playlist_metadata_updated,
-
 };
 
 
@@ -226,7 +213,6 @@ static void SP_CALLCONV playlist_removed ( sp_playlistcontainer *pc, sp_playlist
     sp_playlist_remove_callbacks ( pl, &pl_callbacks, NULL );
 }
 
-
 /**
  * Callback from libspotify, telling us the rootlist is fully synchronized
  *
@@ -235,63 +221,16 @@ static void SP_CALLCONV playlist_removed ( sp_playlistcontainer *pc, sp_playlist
  */
 static void SP_CALLCONV container_loaded ( sp_playlistcontainer *pc, void *userdata )
 {
-    char *folderName = calloc ( 1, sizeof ( char ) * ( MAX_LENGTH_FOLDER_NAME ) );
     int i;
-
-
-    if ( folderName == NULL )
-    {
-        log_error("jahspotify","container_loaded","Could not allocate folder name variable" );
-        return;
-    }
-
-    // log_error("jahspotify: Rootlist synchronized (%d playlists)\n",sp_playlistcontainer_num_playlists ( pc ) );
-    signalSynchStarting(sp_playlistcontainer_num_playlists (pc));
 
     for ( i = 0; i < sp_playlistcontainer_num_playlists ( pc ); ++i )
     {
         sp_playlist *pl = sp_playlistcontainer_playlist ( pc, i );
         sp_playlist_add_callbacks ( pl, &pl_callbacks, NULL );
 
-        sp_link *link = sp_link_create_from_playlist(pl);
-
-        char *linkStr = calloc(1, sizeof(char) * 100);
-        if (link)
-        {
-            sp_link_add_ref(link);
-            sp_link_as_string(link,linkStr,100);
-        }
-        else
-        {
-            strcpy(linkStr,"N/A\0");
-            // strcpy(linkStr,sp_playlist_name(pl));
-        }
-        switch ( sp_playlistcontainer_playlist_type ( pc,i ) )
-        {
-          case SP_PLAYLIST_TYPE_PLAYLIST:
-            signalPlaylistSeen(sp_playlist_name ( pl ),linkStr);
-            break;
-          case SP_PLAYLIST_TYPE_START_FOLDER:
-            sp_playlistcontainer_playlist_folder_name ( pc,i,folderName, MAX_LENGTH_FOLDER_NAME);
-            signalStartFolderSeen(folderName, sp_playlistcontainer_playlist_folder_id(pc,i));
-            break;
-          case SP_PLAYLIST_TYPE_END_FOLDER:
-            sp_playlistcontainer_playlist_folder_name ( pc,i,folderName,MAX_LENGTH_FOLDER_NAME);
-            signalEndFolderSeen();
-            break;
-          case SP_PLAYLIST_TYPE_PLACEHOLDER:
-              log_debug("jahspotify","container_loaded","Placeholder");
-              break;
-          default:
-              log_warn("jahspotify","container_loaded","Unhandled playlist type: %d", sp_playlistcontainer_playlist_type ( pc,i ));
-        }
-
-        if (link)
-            sp_link_release(link);
-        free(linkStr);
+		if (sp_playlist_is_loaded(pl))
+			signalPlaylistLoaded(pl, 0);
     }
-    signalSynchCompleted();
-    free ( folderName );
 }
 
 
@@ -588,12 +527,6 @@ JNIEXPORT jboolean JNICALL Java_jahspotify_impl_JahSpotifyImpl_registerNativePla
     log_debug("jahspotify","registerNativePlaybackListener","Registered playback listener: 0x%x\n", (int)g_playbackListener);
 }
 
-JNIEXPORT jboolean JNICALL Java_jahspotify_impl_JahSpotifyImpl_registerNativeLibraryListener (JNIEnv *env, jobject obj, jobject libraryListener)
-{
-    g_libraryListener = (*env)->NewGlobalRef(env, libraryListener);
-    log_debug("jahspotify","registerNativeLibraryListener","Registered playlist listener: 0x%x\n", (int)g_libraryListener);
-}
-
 JNIEXPORT jboolean JNICALL Java_jahspotify_impl_JahSpotifyImpl_registerNativeConnectionListener (JNIEnv *env, jobject obj, jobject connectionListener)
 {
     g_connectionListener = (*env)->NewGlobalRef(env, connectionListener);
@@ -602,12 +535,6 @@ JNIEXPORT jboolean JNICALL Java_jahspotify_impl_JahSpotifyImpl_registerNativeCon
 
 JNIEXPORT jboolean JNICALL Java_jahspotify_impl_JahSpotifyImpl_unregisterListeners (JNIEnv *env, jobject obj)
 {
-    if (g_libraryListener)
-    {
-        (*env)->DeleteGlobalRef(env, g_libraryListener);
-        g_libraryListener = NULL;
-    }
-
     if (g_mediaLoadedListener)
     {
         (*env)->DeleteGlobalRef(env, g_mediaLoadedListener);

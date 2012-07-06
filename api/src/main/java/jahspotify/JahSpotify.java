@@ -3,10 +3,9 @@ package jahspotify;
 import jahspotify.media.Album;
 import jahspotify.media.Artist;
 import jahspotify.media.Image;
-import jahspotify.media.Library;
-import jahspotify.media.LibraryEntry;
 import jahspotify.media.Link;
 import jahspotify.media.Playlist;
+import jahspotify.media.PlaylistContainer;
 import jahspotify.media.Track;
 import jahspotify.media.User;
 
@@ -67,12 +66,11 @@ public interface JahSpotify
      */
     public Playlist readPlaylist(Link link, final int index, final int numEntries);
 
-    /** Retrieves the library for the currently logged in user.  This will retrieve all playlists and playlist folders
-     * for the user.
-     *
-     * @return The library (playlists and playlist folders) for the currently logged in user.
+    /**
+     * Retrieves the playlistcontainer with all playlists for the current user.
+     * @return
      */
-    public Library retrieveLibrary();
+    public PlaylistContainer getPlaylistContainer();
 
     /** Pauses the currently playing track.  Does nothing if nothing is currently playing
      *
@@ -143,8 +141,6 @@ public interface JahSpotify
      * @param searchListener
      */
     public void addSearchListener(SearchListener searchListener);
-
-    public LibraryEntry readFolder(Link uri, final int level);
 
     /** Shuts down the JahSpotify instance.
      */

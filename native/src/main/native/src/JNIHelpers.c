@@ -9,7 +9,6 @@
 JavaVM* g_vm = NULL;
 
 jclass g_playbackListenerClass;
-jclass g_libraryListenerClass;
 jclass g_connectionListenerClass;
 jclass g_searchCompleteListenerClass;
 jclass g_mediaLoadedListenerClass;
@@ -122,7 +121,7 @@ jobject createInstanceFromJClass(JNIEnv *env, jclass jClass)
   jConstructor = (*env)->GetMethodID(env,jClass, "<init>","()V");
   
   // jobject instance = (*env)->AllocObject(env,jClass);
-  instance = (*env)->NewObject(env, jClass,jConstructor);
+  instance = (*env)->NewObject(env, jClass,jConstructor); // Release
   
   if (instance == NULL)
   {
@@ -389,14 +388,6 @@ jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved)
     }
     g_playbackListenerClass = (*env)->NewGlobalRef(env,aClass);
     
-    aClass = (*env)->FindClass(env, "jahspotify/impl/NativeLibraryListener");
-    if (aClass == NULL)
-    {
-        log_error("jahspotify","JNI_OnLoad","Could not load jahnotify.impl.NativeLibraryListener");
-        goto error;
-    }
-    g_libraryListenerClass = (*env)->NewGlobalRef(env,aClass);
-
     aClass = (*env)->FindClass(env, "jahspotify/SearchResult");
     if (aClass == NULL)
     {

@@ -11,10 +11,9 @@ import jahspotify.media.Album;
 import jahspotify.media.Artist;
 import jahspotify.media.Image;
 import jahspotify.media.ImageSize;
-import jahspotify.media.Library;
-import jahspotify.media.LibraryEntry;
 import jahspotify.media.Link;
 import jahspotify.media.Playlist;
+import jahspotify.media.PlaylistContainer;
 import jahspotify.media.Track;
 import jahspotify.media.User;
 
@@ -23,8 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Stack;
-import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
@@ -52,12 +49,8 @@ public class JahSpotifyImpl implements JahSpotify
     private Map<Integer, SearchListener> _prioritySearchListeners = new HashMap<Integer, SearchListener>();
     private List<PlaylistListener> _playlistListeners = new ArrayList<PlaylistListener>();
 
-    private Stack<LibraryEntry> _nodeStack = new Stack<LibraryEntry>();
-    private LibraryEntry _currentLibraryEntry = new LibraryEntry(null, "jahspotify:folder:ROOT", "ROOT", Link.Type.FOLDER.name());
-
     private Thread _jahSpotifyThread;
     private static JahSpotifyImpl _jahSpotify;
-    private Library _library;
     private boolean _synching = false;
     private User _user;
     private AtomicInteger _globalToken = new AtomicInteger(1);
@@ -68,6 +61,7 @@ public class JahSpotifyImpl implements JahSpotify
     private final Set<Link> _lockedArtists = new CopyOnWriteArraySet<Link>();
     private final Set<Link> _lockedAlbums = new CopyOnWriteArraySet<Link>();
     private final Set<Link> _lockedImages = new CopyOnWriteArraySet<Link>();
+    private final PlaylistContainer playlistContainer = new PlaylistContainer();
 
     protected JahSpotifyImpl()
     {
@@ -84,9 +78,9 @@ public class JahSpotifyImpl implements JahSpotify
             }
 
             @Override
-            public void playlist(final int token, final Link link)
+            public void playlist(final int token, final Link link, final String name)
             {
-                _log.trace(String.format("Playlist loaded: token=%d link=%s", token, link));
+            	playlistContainer.addPlaylist(link, name);
             }
 
             @Override
@@ -188,112 +182,6 @@ public class JahSpotifyImpl implements JahSpotify
             }
         });
 
-        registerNativeLibraryListener(new NativeLibraryListener()
-        {
-
-            @Override
-            public void synchCompleted()
-            {
-                _log.debug("Synch complete");
-
-                if (!_nodeStack.isEmpty())
-                {
-                    // Something is wrong
-                    _log.warn("Node stack is not empty, yet we received synch completed");
-                }
-
-                _library = new Library();
-                _library.addEntry(_currentLibraryEntry);
-
-                debugPrintNodes(_currentLibraryEntry, 0);
-
-                for (PlaylistListener listener : _playlistListeners)
-                {
-                    listener.synchCompleted();
-                }
-
-                // FIXME: Spawn off thread which populates the nodes kept in-memory now
-                _synching = false;
-                _log.debug("Library ready");
-            }
-
-            @Override
-            public void synchStarted(int numPlaylists)
-            {
-                _log.debug("Synch started: " + numPlaylists);
-                _synching = true;
-                _nodeStack.clear();
-                _library = null;
-
-                for (PlaylistListener listener : _playlistListeners)
-                {
-                    listener.synchStarted(numPlaylists);
-                }
-            }
-
-            @Override
-			public void metadataUpdated(String uri)
-            {
-                final Link link = Link.create(uri);
-                _log.debug("Metadata updated for '" + link + "', initiating reload of watched playlists");
-                if (_synching)
-                {
-                    _log.debug("Metadata update received during synch - will ignore");
-                    return;
-                }
-
-                // Should trawl the tree, from the root node down and update:
-                // - folders
-                // - playlists
-                // - tracks
-                // - albums
-
-                for (PlaylistListener playlistListener : _playlistListeners)
-                {
-                    playlistListener.metadataUpdated(link);
-                }
-
-            }
-
-            @Override
-            public void startFolder(final String folderName, final long folderID)
-            {
-                _nodeStack.push(_currentLibraryEntry);
-                final Link folderLink = Link.createFolderLink(folderID);
-                _currentLibraryEntry = new LibraryEntry(_currentLibraryEntry.getId(), folderLink.getId(), folderName, Link.Type.FOLDER.name());
-                for (PlaylistListener listener : _playlistListeners)
-                {
-                    listener.startFolder(folderLink, folderName);
-                }
-            }
-
-            @Override
-            public void endFolder()
-            {
-                final LibraryEntry entry = _nodeStack.pop();
-                entry.addSubEntry(_currentLibraryEntry);
-                _currentLibraryEntry = entry;
-
-                for (PlaylistListener listener : _playlistListeners)
-                {
-                    listener.endFolder(Link.create(entry.getId()));
-                }
-            }
-
-            @Override
-            public void playlist(final String name, final String link)
-            {
-                if (_synching)
-                {
-                    _currentLibraryEntry.addSubEntry(new LibraryEntry(_currentLibraryEntry.getId(), link, name, Link.Type.PLAYLIST.name()));
-                }
-
-                for (PlaylistListener listener : _playlistListeners)
-                {
-                    listener.playlist(Link.create(link), name);
-                }
-            }
-        });
         registerNativeConnectionListener(new NativeConnectionListener()
         {
             @Override
@@ -335,6 +223,11 @@ public class JahSpotifyImpl implements JahSpotify
         });
     }
 
+    @Override
+	public PlaylistContainer getPlaylistContainer() {
+		return playlistContainer;
+	}
+
     protected void albumLoadedCallback(final int token, final Album album)
     {
         _log.trace(String.format("Album loaded: token=%d link=%s", token, album.getId()));
@@ -362,41 +255,10 @@ public class JahSpotifyImpl implements JahSpotify
         }
     }
 
-    private void debugPrintNodes(final LibraryEntry entry, int indentation)
-    {
-        if (_log.isDebugEnabled())
-        {
-            String msg = "";
-            for (int i = 0; i < indentation; i++)
-            {
-                msg = msg + " ";
-            }
-            Link.Type type = Link.Type.valueOf(entry.getType());
-            switch (type)
-            {
-                case FOLDER:
-                    msg = msg + "-" + entry.getName() + "(" + entry.getId() + ")";
-                    _log.debug(msg);
-                    Set<LibraryEntry> children = entry.getSubEntries();
-                    for (LibraryEntry child : children)
-                    {
-                        debugPrintNodes(child, indentation + 2);
-                    }
-                    break;
-                case PLAYLIST:
-                    msg = msg + "* " + entry.getName() + "(" + entry.getId() + ")";
-                    _log.debug(msg);
-                    break;
-            }
-        }
-    }
-
-    public static JahSpotify getInstance()
+    public static synchronized JahSpotify getInstance()
     {
         if (_jahSpotify == null)
-        {
             _jahSpotify = new JahSpotifyImpl();
-        }
         return _jahSpotify;
     }
 
@@ -656,42 +518,6 @@ public class JahSpotifyImpl implements JahSpotify
     }
 
     @Override
-    public LibraryEntry readFolder(final Link uri, final int level)
-    {
-        ensureLoggedIn();
-
-        if (!uri.isFolderLink())
-        {
-            throw new IllegalArgumentException("Not a folder link");
-        }
-
-        Library library = retrieveLibrary();
-        if (library == null)
-        {
-            return null;
-        }
-
-        if (uri.getFolderId() == 0)
-        {
-            final LibraryEntry entry = trimToLevel(_currentLibraryEntry, 0, level);
-            populateEmptyEntries(entry, 0, level);
-            return entry;
-        }
-
-        for (LibraryEntry entry : library.getEntries())
-        {
-            final LibraryEntry folderEntry = findFolder(entry, uri);
-            if (folderEntry != null)
-            {
-                final LibraryEntry trimmedEntry = trimToLevel(folderEntry, 0, level);
-                populateEmptyEntries(trimmedEntry, 0, level);
-                return trimmedEntry;
-            }
-        }
-        return null;
-    }
-
-    @Override
     public void seek(final int offset)
     {
         ensureLoggedIn();
@@ -703,138 +529,6 @@ public class JahSpotifyImpl implements JahSpotify
     {
         ensureLoggedIn();
         nativeShutdown();
-    }
-
-    private void populateEmptyEntries(final LibraryEntry entry, int currentLevel, int requiredLevel)
-    {
-        final Link.Type type = Link.Type.valueOf(entry.getType());
-        _log.debug("Populating entry: " + entry.getId());
-        _log.debug("Current level: " + currentLevel);
-        _log.debug("Required level: " + requiredLevel);
-
-        switch (type)
-        {
-            case PLAYLIST:
-                if (entry.getSubEntries() == null || entry.getSubEntries().isEmpty())
-                {
-                    _log.debug("Loading tracks for playlist " + entry.getId());
-                    // load the playlist!
-                    if ("N/A".equals(entry.getId())) return;
-                    Playlist playlist = readPlaylist(Link.create(entry.getId()), 0, 0);
-                    if (playlist != null)
-                    {
-                        // Always add the number of tracks/entries to the playlist
-                        entry.setNumEntries(playlist.getNumTracks());
-
-                        // However, if the required level is reached in terms of trimmin' simply return
-                        if (currentLevel == requiredLevel)
-                        {
-                            _log.debug("Required level reached");
-                            return;
-                        }
-
-                        _log.debug("Playlist loaded, adding " + playlist.getTracks().size() + " track(s)");
-                        for (Link trackLink : playlist.getTracks())
-                        {
-                            final Track track = readTrack(trackLink);
-                            if (track != null)
-                            {
-                                entry.addSubEntry(new LibraryEntry(entry.getId(), trackLink.getId(), track.getTitle(), Link.Type.TRACK.name()));
-                            }
-                        }
-                    }
-                }
-
-            case FOLDER:
-            default:
-                // However, if the required level is reached in terms of trimmin' simply return
-                if (currentLevel == requiredLevel)
-                {
-                    _log.debug("Required level reached");
-                    for (LibraryEntry subEntry : entry.getSubEntries())
-                    {
-                        populateEmptyEntries(subEntry, 0, 0);
-                    }
-                    return;
-                }
-                else
-                {
-                    for (LibraryEntry subEntry : entry.getSubEntries())
-                    {
-                        populateEmptyEntries(subEntry, currentLevel + 1, requiredLevel);
-                    }
-                }
-                break;
-        }
-
-
-    }
-
-    private LibraryEntry trimToLevel(final LibraryEntry folderEntry, final int currentLevel, final int level)
-    {
-        if (level == 0)
-        {
-            return folderEntry;
-        }
-
-        final Set<LibraryEntry> strippedSubEntries = new TreeSet<LibraryEntry>();
-        if (level == currentLevel)
-        {
-            // Remove all children of any sub-entries now
-            for (LibraryEntry entry : folderEntry.getSubEntries())
-            {
-                final LibraryEntry e = new LibraryEntry(folderEntry.getId(), entry.getId(), entry.getName(), entry.getType());
-                e.setNumEntries(entry.getNumEntries());
-                strippedSubEntries.add(e);
-            }
-        }
-        else
-        {
-            for (LibraryEntry entry : folderEntry.getSubEntries())
-            {
-                strippedSubEntries.add(trimToLevel(entry, currentLevel + 1, level));
-            }
-        }
-
-        final LibraryEntry entry = new LibraryEntry(folderEntry.getParentID(), folderEntry.getId(), folderEntry.getName(), folderEntry.getType());
-        entry.setSubEntries(strippedSubEntries);
-        entry.setNumEntries(folderEntry.getNumEntries());
-        return entry;
-    }
-
-    private LibraryEntry findFolder(final LibraryEntry rootEntry, final Link uri)
-    {
-        if (isFolderMatch(rootEntry, uri))
-        {
-            return rootEntry;
-        }
-        for (LibraryEntry entry : rootEntry.getSubEntries())
-        {
-            LibraryEntry foundEntry = findFolder(entry, uri);
-            if (foundEntry != null)
-            {
-                return foundEntry;
-            }
-        }
-        return null;
-    }
-
-    private boolean isFolderMatch(final LibraryEntry rootEntry, final Link uri)
-    {
-        if (rootEntry.getType().equals(LibraryEntry.FOLDER_ENTRY_TYPE))
-        {
-            if (rootEntry.getId().equals(uri.getId()))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @Override
-	public Library retrieveLibrary()
-    {
-        return _library;
     }
 
     @Override
@@ -934,7 +628,6 @@ public class JahSpotifyImpl implements JahSpotify
     private native void nativeInitiateSearch(final int i, NativeSearchParameters token);
     private native boolean registerNativeConnectionListener(final NativeConnectionListener nativeConnectionListener);
     private native boolean registerNativeSearchCompleteListener(final NativeSearchCompleteListener nativeSearchCompleteListener);
-    private native boolean registerNativeLibraryListener(NativeLibraryListener nativeLibraryListener);
 
     private native boolean nativeShutdown();
 

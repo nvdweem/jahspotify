@@ -16,7 +16,10 @@ public class JahSpotifyService
     private JahSpotify _jahSpotify;
 
     private static JahSpotifyService instance;
-    public static JahSpotifyService getInstance() {
+    public static synchronized JahSpotifyService getInstance() {
+    	if (tempFolder == null)
+    		return null;
+
     	if (instance == null) {
     		try {
 	    		instance = new JahSpotifyService();

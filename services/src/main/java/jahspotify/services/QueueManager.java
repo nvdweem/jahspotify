@@ -61,7 +61,7 @@ public class QueueManager
     private JahSpotify _jahSpotify;
 
     private static QueueManager instance;
-    public static QueueManager getInstance() {
+    public static synchronized QueueManager getInstance() {
     	if (instance == null) {
     		instance = new QueueManager();
     		instance.initialize();

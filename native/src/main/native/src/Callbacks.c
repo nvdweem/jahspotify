@@ -21,14 +21,12 @@ extern jobject createJPlaylistInstance(JNIEnv *env, sp_playlist *playlist);
 extern sp_session *g_sess;
 extern sp_track *g_currenttrack;
 
-extern jobject g_libraryListener;
 extern jobject g_connectionListener;
 extern jobject g_playbackListener;
 extern jobject g_searchCompleteListener;
 extern jobject g_mediaLoadedListener;
 
 extern jclass g_playbackListenerClass;
-extern jclass g_libraryListenerClass;
 extern jclass g_connectionListenerClass;
 extern jclass g_searchCompleteListenerClass;
 extern jclass g_nativeSearchResultClass;
@@ -213,224 +211,6 @@ int signalLoggedIn()
     
 }
 
-int signalStartFolderSeen(char *folderName, uint64_t folderId)
-{
-    JNIEnv* env = NULL;
-    int result;
-    jclass aClass;
-    jmethodID method;
-    jstring folderNameStr;
-    
-    if (!g_libraryListener)
-    {
-        log_error("jahspotify","signalStartFolderSeen","No playlist listener registered");
-        return 1;
-    }
-
-    if (!retrieveEnv((JNIEnv*)&env))
-    {
-        goto fail;
-    }
-    
-    if (folderName)
-    {
-        folderNameStr = (*env)->NewStringUTF(env, folderName);
-        if (folderNameStr == NULL)
-        {
-            log_error("callbacks","signalStartFolderSeen","Error creating java string");
-            goto fail;
-        }
-    }
-    
-    method = (*env)->GetMethodID(env, g_libraryListenerClass, "startFolder", "(Ljava/lang/String;J)V");
-    
-    if (method == NULL)
-    {
-        log_error("callbacks","signalStartFolderSeen","Could not load callback method startFolder(string) on class jahnotify.PlaylistListener");
-        goto fail;
-    }
-    
-    (*env)->CallVoidMethod(env, g_libraryListener, method,folderNameStr,folderId);
-    if (checkException(env) != 0)
-    {
-        log_error("callbacks","signalStartFolderSeen","Exception while calling callback");
-        goto fail;
-    }
-    
-    goto exit;
-    
-fail:
-    log_error("callbacks","signalStartFolderSeen","Error during callback");
-    
-exit:
-    if (folderNameStr) 
-        (*env)->DeleteLocalRef(env, folderNameStr);
-    
-    result = detachThread();
-    
-}
-
-int signalSynchStarting(int numPlaylists)
-{
-    JNIEnv* env = NULL;
-    int result;
-    jclass aClass;
-    jmethodID method;
-    
-    if (!g_libraryListener)
-    {
-        log_error("jahspotify","signalSynchStarting","No playlist listener registered");
-        return 1;
-    }
-    
-    if (!retrieveEnv((JNIEnv*)&env))
-    {
-        goto fail;
-    }
-    
-    method = (*env)->GetMethodID(env, g_libraryListenerClass, "synchStarted", "(I)V");
-    
-    if (method == NULL)
-    {
-        log_error("callbacks","signalSynchStarting","Could not load callback method synchStarted(int) on class jahnotify.PlaylistListener");
-        goto fail;
-    }
-    
-    (*env)->CallVoidMethod(env, g_libraryListener, method, numPlaylists);
-    checkException(env);
-    
-    goto exit;
-    
-    fail:
-    log_error("callbacks","signalSynchStarting","Error during callback");
-    
-    exit:
-    
-    result = detachThread();
-}
-
-int signalSynchCompleted()
-{
-    JNIEnv* env = NULL;
-    int result;
-    jclass aClass;
-    jmethodID method;
-    
-    if (!g_libraryListener)
-    {
-        log_error("jahspotify","signalSynchCompleted","No playlist listener registered");
-        return 1;
-    }
-    
-    if (!retrieveEnv((JNIEnv*)&env))
-    {
-        goto fail;
-    }
-    
-    method = (*env)->GetMethodID(env, g_libraryListenerClass, "synchCompleted", "()V");
-    
-    if (method == NULL)
-    {
-        log_error("callbacks","signalSynchCompleted","Could not load callback method synchCompleted() on class jahnotify.PlaylistListener");
-        goto fail;
-    }
-    
-    (*env)->CallVoidMethod(env, g_libraryListener, method);
-    checkException(env);
-    
-    goto exit;
-    
-    fail:
-    
-    log_error("callbacks","signalSynchCompleted","Error during callback");
-    
-    exit:
-    
-    result = detachThread();
-}
-
-int signalMetadataUpdated(sp_playlist *playlist)
-{
-    JNIEnv* env = NULL;
-    int result;
-    jclass aClass;
-    jmethodID method;
-    
-    if (!g_libraryListener)
-    {
-        log_error("jahspotify","signalMetadataUpdated","No playlist listener registered");
-        return 1;
-    }
-    
-    if (!retrieveEnv((JNIEnv*)&env))
-    {
-        goto fail;
-    }
-    
-    method = (*env)->GetMethodID(env, g_libraryListenerClass, "metadataUpdated", "(Ljava/lang/String;)V");
-    
-    if (method == NULL)
-    {
-        log_error("callbacks","signalMetadataUpdated","Could not load callback method metadataUpdated() on class NativeLibraryListener");
-        goto fail;
-    }
-    
-    (*env)->CallVoidMethod(env, g_libraryListener, method);
-    if (checkException(env) != 0)
-    {
-        log_error("callbacks","signalMetadataUpdated","Exception while calling callback");
-    }
-    goto exit;
-    
-fail:
-    log_error("callbacks","signalMetadataUpdated","Error during callback");
-    
-exit:
-    
-    result = detachThread();
-    
-}
-
-
-int signalEndFolderSeen()
-{
-    JNIEnv* env = NULL;
-    int result;
-    jclass aClass;
-    jmethodID method;
-    
-    if (!g_libraryListener)
-    {
-        log_error("jahspotify","signalEndFolderSeen","No playlist listener registered");
-        return 1;
-    }
-   
-   if (!retrieveEnv((JNIEnv*)&env))
-   {
-       goto fail;
-   }
-   
-   method = (*env)->GetMethodID(env, g_libraryListenerClass, "endFolder", "()V");
-   
-   if (method == NULL)
-   {
-       log_error("callbacks","signalEndFolderSeen","Could not load callback method endFolder() on class jahnotify.PlaylistListener");
-       goto fail;
-   }
-   
-   (*env)->CallVoidMethod(env, g_libraryListener, method);
-   checkException(env);
-   
-   goto exit;
-   
-   fail:
-   log_error("callbacks","signalEndFolderSeen","Error during callback");
-   
-   exit:
-   
-   result = detachThread();
-}
-
 int signalTrackEnded(char *uri, bool forcedTrackEnd)
 {
   if (!g_playbackListener)
@@ -538,80 +318,6 @@ exit:
         (*env)->DeleteLocalRef(env, uriStr);
     
     result = detachThread();        
-}
-
-int signalPlaylistSeen(const char *playlistName, char *linkName)
-{
-    log_debug("callbacks","signalPlaylistSeen","Playlist seen: name: %s link: %s",playlistName,linkName);
-
-    if (!g_libraryListener)
-    {
-        log_error("jahspotify","signalPlaylistSeen","No playlist listener registered");
-        return 1;
-    }
-
-    JNIEnv* env = NULL;
-    int result;
-    jclass aClass;
-    jmethodID aMethod;
-
-    jstring playListStr;
-    jstring linkNameStr;
-    
-    if (!retrieveEnv((JNIEnv*)&env))
-    {
-        goto fail;
-    }
-    
-    aMethod = (*env)->GetMethodID(env, g_libraryListenerClass, "playlist", "(Ljava/lang/String;Ljava/lang/String;)V");
-    
-    if (aMethod == NULL)
-    {
-        log_error("callbacks","signalPlaylistSeen","Could not load callback method playlistSeen(string) on class NativeLibraryListener");
-        goto fail;
-    }
-    
-    if (linkName)
-    {
-        linkNameStr = (*env)->NewStringUTF(env, linkName);
-        if (linkNameStr == NULL)
-        {
-            log_error("callbacks","signalPlaylistSeen","Error creating java string");
-            goto fail;
-        }
-    }
-    
-    if (playlistName)
-    {
-        playListStr = (*env)->NewStringUTF(env, playlistName);
-        if (playListStr == NULL)
-        {
-            log_error("callbacks","signalPlaylistSeen","Error creating java string");
-            goto fail;
-        }
-    }
-    
-    (*env)->CallVoidMethod(env, g_libraryListener, aMethod, playListStr,linkNameStr);
-    if (checkException(env) != 0)
-    {
-        log_error("callbacks","signalPlaylistSeen","Exception while calling callback");
-        goto fail;
-    }
-    
-    
-    
-    goto exit;
-    
-fail:
-    log_error("callbacks","signalPlaylistSeen","Error during callback");
-    
-exit:
-    if (linkNameStr) (*env)->DeleteLocalRef(env, linkNameStr);
-    if (playListStr) (*env)->DeleteLocalRef(env, playListStr);
-    
-    result = detachThread();
-
-    
 }
 
 int signalArtistBrowseLoaded(sp_artistbrowse *artistBrowse, jobject artistInstance)
@@ -734,7 +440,7 @@ int signalImageLoaded(sp_image *image, jobject imageInstance)
 
   size_t size;
   const void* pData = sp_image_data(image, &size);
-  jbyteArray byteArray = (*env)->NewByteArray(env, size );
+  jbyteArray byteArray = (*env)->NewByteArray(env, size );  // Release
   jboolean isCopy = 0;
   jbyte* pByteData = (*env)->GetByteArrayElements(env, byteArray, &isCopy );
   size_t i;
@@ -785,7 +491,7 @@ int signalPlaylistLoaded(sp_playlist *playlist, int32_t token)
       goto fail;
   }
   
-  method = (*env)->GetMethodID(env, g_mediaLoadedListenerClass, "playlist", "(ILjahspotify/media/Link;)V");
+  method = (*env)->GetMethodID(env, g_mediaLoadedListenerClass, "playlist", "(ILjahspotify/media/Link;Ljava/lang/String;)V");
   
   if (method == NULL)
   {
@@ -801,7 +507,16 @@ int signalPlaylistLoaded(sp_playlist *playlist, int32_t token)
   
   sp_link_release(link);
   
-  (*env)->CallVoidMethod(env,g_mediaLoadedListener,method,token,jLink);
+  
+  jstring playlistName;
+  const char* pName = sp_playlist_name(playlist);
+  if (pName)
+      playlistName = (*env)->NewStringUTF(env, pName);
+  
+  (*env)->CallVoidMethod(env,g_mediaLoadedListener,method,token,jLink,playlistName);
+
+  if (playlistName) (*env)->DeleteLocalRef(env, playlistName);
+
   if (checkException(env) != 0)
   {
       log_error("callbacks","signalPlaylistLoaded","exception while calling listener");

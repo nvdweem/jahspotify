@@ -37,7 +37,7 @@ import java.util.regex.Pattern;
  * @author Felix Bruns <felixbruns@web.de>
  * @author Johan Lindquist
  */
-public class Link
+public class Link implements Comparable<Link>
 {
     public String getUri()
     {
@@ -49,7 +49,7 @@ public class Link
      */
     public enum Type
     {
-        ARTIST, ALBUM, TRACK, PLAYLIST, FOLDER, IMAGE, SEARCH, QUEUE, PODCAST, MP3, LOCAL, USER;
+        ARTIST, ALBUM, TRACK, PLAYLIST, IMAGE, SEARCH, QUEUE, PODCAST, MP3, LOCAL, USER;
 
         /**
          * Returns the lower-case name of this enum constant.
@@ -290,20 +290,6 @@ public class Link
             this.id = uri;
             this.uri = jahMp3Matcher.group(1);
         }
-        else if (jahFolderMatcher.matches())
-        {
-            this.type = Type.FOLDER;
-            this.id = uri;
-            final String group = jahFolderMatcher.group(1);
-            if (group.equals("ROOT"))
-            {
-                this.folderId = 0l;
-            }
-            else
-            {
-                this.folderId = Hex.hexToLong(group);
-            }
-        }
         else if (localMatcher.matches())
         {
         	this.type = Type.LOCAL;
@@ -418,16 +404,6 @@ public class Link
     public boolean isQueueLink()
     {
         return this.type.equals(Type.QUEUE);
-    }
-
-    /**
-     * Check if this link is a folder link.
-     *
-     * @return true if this link is a folder link, false otherwise.
-     */
-    public boolean isFolderLink()
-    {
-        return this.type.equals(Type.FOLDER);
     }
 
     /**
@@ -642,4 +618,9 @@ public class Link
         result = 31 * result + (folderId != null ? folderId.hashCode() : 0);
         return result;
     }
+
+	@Override
+	public int compareTo(Link o) {
+		return this.getId().compareTo(o.getId());
+	}
 }
